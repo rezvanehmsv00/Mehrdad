@@ -937,7 +937,7 @@ Object.assign(DE, {
   'Done for today': 'Fertig für heute', 'Rest day': 'Ruhetag', 'Tennis day': 'Tennistag', 'Yoga day': 'Yogatag', 'Change my mind': 'Doch anders entscheiden',
   'Today is a rest day': 'Heute ist Ruhetag', 'Rest today': 'Heute ausruhen',
   'You trained two days in a row, so your muscles recover today. That\'s when they get stronger.': 'Du hast zwei Tage hintereinander trainiert, also erholen sich deine Muskeln heute. Genau dann werden sie stärker.',
-  "What's in today's workout": 'Das steht heute an', 'This week': 'Diese Woche', 'Last week': 'Letzte Woche', 'See calendar': 'Kalender ansehen',
+  "What's in today's workout": 'Das steht heute an', 'Start warm-up': 'Aufwärmen starten', 'Back': 'Zurück', 'This week': 'Diese Woche', 'Last week': 'Letzte Woche', 'See calendar': 'Kalender ansehen',
   'Safety:': 'Sicherheit:', 'Wrists and knee first: skip anything that hurts, and ask a physio if you\'re unsure.': 'Handgelenke und Knie zuerst: Lass alles weg, was wehtut, und frag im Zweifel einen Physiotherapeuten.',
   'Workout in progress': 'Training läuft', 'Unfinished workout': 'Nicht beendetes Training', 'Continue': 'Weiter', 'Count as done': 'Als erledigt zählen', 'Delete': 'Löschen',
   'Cancel workout': 'Training abbrechen', 'Time for a backup': 'Zeit für ein Backup', 'Save backup': 'Backup speichern',
@@ -1153,6 +1153,7 @@ DE_RX.push(
   [/^(.+): (nothing logged|upcoming|Lower|Upper|Both|Rest|Tennis|Yoga)$/, (m, d, s) => `${d}: ${tr(s)}`],
   [/^(Lower body|Upper body), cycle (\d+), week (\d+)$/, (m, d, c, w) => `${deDay(d)}, Zyklus ${c}, Woche ${w}`],
   [/^Next up: (Lower body|Upper body), cycle (\d+), week (\d+)\.$/, (m, d, c, w) => `Als Nächstes: ${deDay(d)}, Zyklus ${c}, Woche ${w}.`],
+  [/^Plan: cycle (\d+), week (\d+)\. (\d+) of (\d+) workouts done\.$/, 'Plan: Zyklus $1, Woche $2. $3 von $4 Trainings erledigt.'],
   [/^Plan: cycle (\d+), week (\d+)\. (\d+) of (\d+) workouts done\. Missed a day\? The next workout simply waits for you\.$/, 'Plan: Zyklus $1, Woche $2. $3 von $4 Trainings erledigt. Einen Tag verpasst? Das nächste Training wartet einfach auf dich.'],
   [/^Plan updated ([^:]+): (.+?)\.( Saved on this phone only; back up now and then under You\.)?$/, (m, d, n, local) => `Plan aktualisiert am ${d}: ${n === 'Band exercises added, weights follow your 1/3/5/8 kg dumbbells, tennis plan added' ? 'Band-Übungen, Gewichte nach deinen 1/3/5/8-kg-Hanteln, Tennis-Plan' : n}.${local ? ' Nur auf diesem Handy gespeichert, sichere unter „Du“ ab und zu ein Backup.' : ''}`],
   [/^Cycle (\d+), week (\d+)$/, 'Zyklus $1, Woche $2'],
@@ -1584,6 +1585,7 @@ let tab = 'today';
 let screen = 'home';     // home | workout | summary | review
 let wview = 'focus';     // focus: one exercise at a time | list: all exercises
 let pickDay = null;
+let preview = false; // 'Yes, let's go' shows the list first, then the warm-up
 let editPlan = false;
 let summaryOf = null;
 let reviewOf = null;     // { cycle, round }
@@ -2274,6 +2276,7 @@ function calendarCardHTML() {
     ${calMode === 'week' ? weekStripHTML(calOffset) : monthGridHTML(calOffset)}
     <div class="legend"><span><i class="lower"></i>${DAY_LABEL.lower}</span><span><i class="upper"></i>${DAY_LABEL.upper}</span><span><i class="${ACTIVE.alt.key}"></i>${ACTIVE.alt.label}</span><span><i class="rest"></i>Rest</span></div>
     <p class="small muted">Tap an earlier day to mark it as ${ACTIVE.alt.label.toLowerCase()} or rest.</p>
+    <p class="small muted">Plan: cycle ${S.state.cycle}, week ${S.state.week}. ${doneIn(S.state.cycle, S.state.week).length} of ${ACTIVE.perWeek} workouts done. Missed a day? The next workout simply waits for you.</p>
   </section>`;
 }
 function dayEditSheet(key) {
@@ -2293,7 +2296,6 @@ function renderToday() {
   const day = pickDay || due;
   const items = itemsFor(cycle, week, day);
   const info = CYCLE_INFO[cycle];
-  const nDone = doneIn(cycle, week).length;
   const kToday = (S.state.kegels || {})[todayKey()] || 0;
   const kg = KEGEL[cycle];
   const R = S.resumable && !A ? S.resumable : null;
@@ -2334,6 +2336,13 @@ function renderToday() {
     hero = `<section class="checkin"><p class="sub">${greeting()}.</p><h1>Today is a rest day</h1>
       <p>You trained two days in a row, so your muscles recover today. That's when they get stronger.</p>
       <div class="actions col"><button class="btn btn-primary big" data-act="day-choose" data-v="rest">Rest today</button><button class="btn btn-soft btn-block" data-act="day-choose" data-v="${ACTIVE.alt.key}">${ACTIVE.alt.instead}</button></div></section>`;
+  } else if (preview && !busy) {
+    hero = `<section class="checkin"><p class="sub">${greeting()}. Today's workout:</p><h1>${DAY_LABEL[day]}</h1>
+      <p class="muted">${workoutLine}</p>
+      <h3>What's in today's workout</h3>
+      <div class="card"><ul class="plist">${list}</ul></div>
+      <div class="actions col"><button class="btn btn-primary big" data-act="go">Start warm-up</button>
+        <button class="btn btn-soft btn-block" data-act="preview-back">Back</button></div></section>`;
   } else {
     hero = `<section class="checkin"><p class="sub">${greeting()}. Today's workout:</p><h1>${DAY_LABEL[day]}</h1>
       <p class="muted">${workoutLine}</p>
@@ -2344,20 +2353,14 @@ function renderToday() {
       ${busy ? '<p class="small muted">Continue or delete the unfinished workout first.</p>' : ''}
       <button class="btn btn-ghost" style="padding:0;align-self:flex-start" data-act="pick" data-v="${other}">${day === due ? 'Do ' + DAY_LABEL[other].toLowerCase() + ' instead' : 'Back to ' + DAY_LABEL[due].toLowerCase() + ' (planned)'}</button></section>`;
   }
-  const showList = !isWorkout(st) && !(st === 'rest' || st === ACTIVE.alt.key) && !(restDue && !pickDay);
 
   view.innerHTML = `
+  <p class="small muted" style="margin:0 2px">Plan: cycle ${cycle}, week ${week}. ${doneIn(cycle, week).length} of ${ACTIVE.perWeek} workouts done.</p>
   ${pr ? `<section class="banner good"><div><h3>Cycle ${pr.cycle} complete</h3><p class="small">Your review and tips for the next cycle are ready.</p></div><div class="actions"><button class="btn btn-primary" data-act="review" data-v="${pr.cycle}" data-r="${pr.round}">See review</button></div></section>` : ''}
   ${banner}
   ${backupDue() ? `<section class="banner"><div><h3>Time for a backup</h3><p class="small">Your workouts live only on this phone. Save a backup file and keep it somewhere safe.</p></div><div class="actions"><button class="btn btn-primary" data-act="backup">Save backup</button></div></section>` : ''}
   ${hero}
   ${ACTIVE.safety ? `<p class="prevnote"><b>Safety:</b> ${ACTIVE.safety}</p>` : ''}
-  ${showList ? `<section class="stack"><h3>What's in today's workout</h3><div class="card"><ul class="plist">${list}</ul></div></section>` : ''}
-  <section class="card">
-    <div class="row between"><h3>This week</h3><button class="btn btn-ghost" style="padding:0" data-tab="history">See calendar</button></div>
-    ${weekStripHTML(0)}
-    <p class="small muted">Plan: cycle ${cycle}, week ${week}. ${nDone} of ${ACTIVE.perWeek} workouts done. Missed a day? The next workout simply waits for you.</p>
-  </section>
   ${prefs().kegels ? `<section class="card">
     <div class="row between" style="align-items:flex-start">
       <div class="stack" style="gap:2px"><h3>Kegels</h3><p class="small muted">${kg.hold} s holds × 10, then ${kg.quick} quick ones. 2–3 times a day.</p></div>
@@ -2578,7 +2581,9 @@ document.addEventListener('click', e => {
       if (S.state.week < 4) S.state.week++; else { S.state.week = 1; S.state.cycle = S.state.cycle < 3 ? S.state.cycle + 1 : 1; }
       saveState(); toast('Now on cycle ' + S.state.cycle + ', week ' + S.state.week); render(); break;
     case 'pick': pickDay = v; render(); break;
-    case 'start': if (!A && !S.resumable) startWorkout(pickDay || dueDay()); break;
+    case 'start': if (!A && !S.resumable) { preview = true; render(); window.scrollTo(0, 0); } break;
+    case 'go': if (!A && !S.resumable) { preview = false; startWorkout(pickDay || dueDay()); } break;
+    case 'preview-back': preview = false; render(); window.scrollTo(0, 0); break;
     case 'focus': closeSheet(); wview = 'focus'; openDemo = null; renderWorkout(); window.scrollTo(0, 0); break;
     case 'list': closeSheet(); wview = 'list'; openDemo = null; if (rest && !rest.warm) drawRest(); renderWorkout(); window.scrollTo(0, 0); break;
     case 'warm-timer': startRest(300, 'Jumping jacks, then the rest of the list', true); break;
