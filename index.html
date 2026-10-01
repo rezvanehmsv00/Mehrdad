@@ -390,7 +390,10 @@ const CYCLE_INFO_STRENGTH = {
 const KEGEL = { 1: { hold: 5, quick: 10 }, 2: { hold: 8, quick: 15 }, 3: { hold: 10, quick: 20 }, 4: { hold: 10, quick: 25 } };
 const slug = s => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 function ex(group, slot, name, o) {
-  return { group, slot, name, id: slug(name), weighted: !!o.w, time: !!o.t, perSide: !!o.s, bar: !!o.bar, nobar: !!o.nobar, cue: o.cue || '', weeks: o.weeks };
+  const e = { group, slot, name, id: slug(name), weighted: !!o.w, time: !!o.t, perSide: !!o.s, bar: !!o.bar, nobar: !!o.nobar, cue: o.cue || '', weeks: o.weeks };
+  // alt: a B option for the same slot; workouts of the same day alternate A, B, A, B within a cycle
+  if (o.alt) e.alt = ex(group, slot, o.alt.name, { nobar: o.nobar, bar: o.bar, ...o.alt });
+  return e;
 }
 function prog(sets, reps, o = {}) {
   const inc = o.t ? 5 : 2;
@@ -406,10 +409,10 @@ const PLAN_STRENGTH = {
       ex('Main', '1b', 'Glute bridge', { w: 1, cue: 'Ribs down, push through heels, squeeze at the top. Short band above the knees for extra glute work.', weeks: [[3, 15], [3, 17], [3, 15, '2 s squeeze'], [2, 15, 'light week']] }),
       ex('Main', '2a', 'Romanian deadlift', { w: 1, cue: 'Soft knees, push hips back, flat back, feel the hamstrings', weeks: [[3, 12], [3, 14], [4, 12, '+1 set'], [2, 12, 'light week']] }),
       ex('Main', '2b', 'Reverse lunge', { w: 1, s: 1, cue: 'Step back, front knee stable, torso tall', weeks: [[3, 10], [3, 12], [3, 10, 'heavier'], [2, 10, 'light week']] }),
-      ex('Main', '3', 'Single-leg calf raise', { w: 1, s: 1, cue: 'Full range on a stair edge, pause at the top', weeks: [[2, 12], [2, 14], [3, 12, '+1 set'], [1, 12, 'light week']] }),
-      ex('Core', 'C1', 'Dead bug', { s: 1, cue: 'Lower back pressed into the floor', weeks: [[2, 8], [2, 10], [2, 10, 'slower'], [1, 8, 'light week']] }),
-      ex('Core', 'C2', 'Side plank (knees)', { t: 1, s: 1, cue: 'Straight line from knees to head', weeks: [[2, 30], [2, 35], [2, 40], [1, 30, 'light week']] }),
-      ex('Core', 'C3', 'Reverse crunch', { cue: 'Curl hips off the floor, no swinging', weeks: [[2, 12], [2, 14], [2, 15], [1, 12, 'light week']] }),
+      ex('Main', '3', 'Single-leg calf raise', { alt: { name: 'Lateral band walk', s: 1, cue: 'Short band above the knees, slight squat, small steps sideways. Count the steps each way.', weeks: [[2, 12], [2, 14], [3, 12, '+1 set'], [1, 12, 'light week']] }, w: 1, s: 1, cue: 'Full range on a stair edge, pause at the top', weeks: [[2, 12], [2, 14], [3, 12, '+1 set'], [1, 12, 'light week']] }),
+      ex('Core', 'C1', 'Dead bug', { alt: { name: 'Bear hold', t: 1, cue: 'On hands and knees, lift the knees 2–3 cm off the floor. Back flat, breathe.', weeks: [[2, 20], [2, 25], [2, 30], [1, 20, 'light week']] }, s: 1, cue: 'Lower back pressed into the floor', weeks: [[2, 8], [2, 10], [2, 10, 'slower'], [1, 8, 'light week']] }),
+      ex('Core', 'C2', 'Side plank (knees)', { alt: { name: 'Pallof press', s: 1, cue: "Long band around a table leg or door handle at chest height. Stand side-on, press it straight out, don't let it twist you.", weeks: [[2, 10], [2, 12], [2, 12, '2 s hold'], [1, 10, 'light week']] }, t: 1, s: 1, cue: 'Straight line from knees to head', weeks: [[2, 30], [2, 35], [2, 40], [1, 30, 'light week']] }),
+      ex('Core', 'C3', 'Reverse crunch', { alt: { name: 'Heel taps', s: 1, cue: 'On your back, knees bent at 90° above your hips. Lower one heel to tap the floor, back stays flat.', weeks: [[2, 10], [2, 12], [2, 14], [1, 10, 'light week']] }, cue: 'Curl hips off the floor, no swinging', weeks: [[2, 12], [2, 14], [2, 15], [1, 12, 'light week']] }),
     ],
     upper: [
       ex('Skill', 'S1', 'Pike push-up', { cue: 'Hips high, head moves in front of your hands', weeks: [[3, 6], [3, 7], [3, 8], [2, 6, 'light week']] }),
@@ -419,10 +422,10 @@ const PLAN_STRENGTH = {
       ex('Main', '1b', 'Single-arm row', { w: 1, s: 1, cue: 'Pull elbow toward your hip, no twisting', weeks: [[3, 12], [3, 14], [4, 12, '+1 set, heavier'], [2, 12, 'light week']] }),
       ex('Main', '2a', 'Shoulder press', { w: 1, cue: 'Ribs down, press straight overhead', weeks: [[3, 12], [3, 14], [3, 12, 'heavier'], [2, 12, 'light week']] }),
       ex('Main', '2b', 'Dumbbell pullover', { w: 1, cue: 'Arms slightly bent, feel the stretch in your lats', weeks: [[3, 12], [3, 14], [3, 12, 'heavier'], [2, 12, 'light week']] }),
-      ex('Main', '3', 'Band pull-apart', { nobar: 1, cue: 'Long band at shoulder height, arms straight, pull it apart to your chest. Trains your upper back until you have a pull-up bar.', weeks: [[3, 15], [3, 18], [3, 15, 'slower, 2 s squeeze'], [2, 15, 'light week']] }),
-      ex('Core', 'C1', 'Tuck hollow hold', { t: 1, cue: 'Lower back flat, chin tucked', weeks: [[2, 20], [2, 25], [2, 30], [1, 20, 'light week']] }),
-      ex('Core', 'C2', 'Bird dog', { s: 1, cue: 'Hips level, reach long', weeks: [[2, 8], [2, 10], [2, 10, '2 s hold'], [1, 8, 'light week']] }),
-      ex('Core', 'C3', 'Plank shoulder taps', { cue: 'Feet wide, hips still. Count both sides.', weeks: [[2, 16], [2, 20], [2, 24], [1, 16, 'light week']] }),
+      ex('Main', '3', 'Band pull-apart', { alt: { name: 'Lying Y-T raise', cue: 'Lie face down. Arms overhead in a Y, lift them a little and lower, then arms out to the sides in a T. One Y and one T is one rep.', weeks: [[3, 10], [3, 12], [3, 10, '2 s hold'], [2, 10, 'light week']] }, nobar: 1, cue: 'Long band at shoulder height, arms straight, pull it apart to your chest. Trains your upper back until you have a pull-up bar.', weeks: [[3, 15], [3, 18], [3, 15, 'slower, 2 s squeeze'], [2, 15, 'light week']] }),
+      ex('Core', 'C1', 'Tuck hollow hold', { alt: { name: 'Forearm plank', t: 1, cue: 'On forearms, body in one line, squeeze glutes, breathe', weeks: [[2, 30], [2, 35], [2, 40], [1, 30, 'light week']] }, t: 1, cue: 'Lower back flat, chin tucked', weeks: [[2, 20], [2, 25], [2, 30], [1, 20, 'light week']] }),
+      ex('Core', 'C2', 'Bird dog', { alt: { name: 'Superman hold', t: 1, cue: 'Lie face down, lift arms, chest and legs a little. Look at the floor.', weeks: [[2, 20], [2, 25], [2, 30], [1, 20, 'light week']] }, s: 1, cue: 'Hips level, reach long', weeks: [[2, 8], [2, 10], [2, 10, '2 s hold'], [1, 8, 'light week']] }),
+      ex('Core', 'C3', 'Plank shoulder taps', { alt: { name: 'Slow mountain climbers', cue: 'High plank, bring one knee to your chest slowly, hips low. Count both sides.', weeks: [[2, 16], [2, 20], [2, 24], [1, 16, 'light week']] }, cue: 'Feet wide, hips still. Count both sides.', weeks: [[2, 16], [2, 20], [2, 24], [1, 16, 'light week']] }),
     ],
   },
   2: {
@@ -431,10 +434,10 @@ const PLAN_STRENGTH = {
       P('Main', '1b', 'Hip thrust', { w: 1, cue: 'Shoulders on the sofa, dumbbell on hips, short band above the knees, squeeze at the top' }, 4, 12),
       P('Main', '2a', 'Romanian deadlift', { w: 1, main: 1, cue: 'Soft knees, push hips back, flat back' }, 4, 10),
       P('Main', '2b', 'Bulgarian split squat', { w: 1, s: 1, cue: 'Rear foot on a chair, front knee stable' }, 4, 10),
-      P('Main', '3', 'Single-leg calf raise', { w: 1, s: 1, cue: 'Hold a dumbbell, full range on a stair edge' }, 3, 12),
-      P('Core', 'C1', 'Dead bug with dumbbell', { s: 1, cue: 'Hold the dumbbell over your chest, back flat' }, 2, 10),
-      P('Core', 'C2', 'Side plank', { t: 1, s: 1, cue: 'Straight line from feet to head' }, 2, 40),
-      P('Core', 'C3', 'Reverse crunch', { cue: 'Curl hips off the floor, no swinging' }, 2, 15),
+      P('Main', '3', 'Single-leg calf raise', { alt: { name: 'Copenhagen plank, knee on sofa', t: 1, s: 1, cue: 'Side plank with the top knee resting on the sofa, bottom leg free. Lift the hips and hold. Stop if the knee or groin hurts.', weeks: [[3, 15], [3, 20], [3, 25], [2, 15, 'light week']] }, w: 1, s: 1, cue: 'Hold a dumbbell, full range on a stair edge' }, 3, 12),
+      P('Core', 'C1', 'Dead bug with dumbbell', { alt: { name: 'Plank body saw', cue: 'Forearm plank, feet in socks on a smooth floor. Rock forward and back a few cm, back flat.', weeks: [[2, 8], [2, 10], [2, 12], [1, 8, 'light week']] }, s: 1, cue: 'Hold the dumbbell over your chest, back flat' }, 2, 10),
+      P('Core', 'C2', 'Side plank', { alt: { name: 'Suitcase hold', w: 1, t: 1, s: 1, cue: "Stand tall with your heaviest dumbbell in one hand. Don't lean.", weeks: [[2, 30], [2, 35], [2, 40], [1, 30, 'light week']] }, t: 1, s: 1, cue: 'Straight line from feet to head' }, 2, 40),
+      P('Core', 'C3', 'Reverse crunch', { alt: { name: 'Bent-knee leg raise', cue: 'On your back, knees bent. Lower the feet slowly toward the floor and lift back up, lower back pressed down.', weeks: [[2, 12], [2, 14], [2, 15, 'slower'], [1, 12, 'light week']] }, cue: 'Curl hips off the floor, no swinging' }, 2, 15),
     ],
     upper: [
       P('Skill', 'S1', 'Wall walk', { cue: 'Walk feet up the wall, hands toward it, then walk back down' }, 3, 3),
@@ -445,10 +448,10 @@ const PLAN_STRENGTH = {
       P('Main', '1b', 'Single-arm row', { w: 1, s: 1, cue: 'Pull elbow toward your hip' }, 4, 10),
       P('Main', '2a', 'Shoulder press', { w: 1, main: 1, cue: 'Ribs down, press straight overhead' }, 4, 10),
       P('Main', '2b', 'Renegade row', { w: 1, s: 1, cue: 'Plank on dumbbells, feet wide, hips still' }, 4, 6),
-      P('Main', '3', 'Rear delt fly', { w: 1, nobar: 1, cue: 'Hinge forward, flat back, lift the arms out to the sides. Trains your upper back until you have a pull-up bar.' }, 3, 12),
-      P('Core', 'C1', 'Hollow hold', { t: 1, cue: 'Lower back flat, arms and legs long' }, 2, 25),
-      P('Core', 'C2', 'Bird dog', { s: 1, cue: 'Hips level, reach long' }, 2, 10),
-      P('Core', 'C3', 'Plank shoulder taps', { cue: 'Feet wide, hips still' }, 2, 24),
+      P('Main', '3', 'Rear delt fly', { alt: { name: 'Band face pull', cue: 'Long band around a door handle at face height. Pull it toward your forehead, elbows high and wide, squeeze the shoulder blades.', weeks: [[3, 15], [3, 17], [3, 15, '2 s squeeze'], [2, 15, 'light week']] }, w: 1, nobar: 1, cue: 'Hinge forward, flat back, lift the arms out to the sides. Trains your upper back until you have a pull-up bar.' }, 3, 12),
+      P('Core', 'C1', 'Hollow hold', { alt: { name: 'Long-lever plank', t: 1, cue: 'Forearm plank with the elbows a little in front of your shoulders. Harder than it looks.', weeks: [[2, 25], [2, 30], [2, 35], [1, 25, 'light week']] }, t: 1, cue: 'Lower back flat, arms and legs long' }, 2, 25),
+      P('Core', 'C2', 'Bird dog', { alt: { name: 'Bird dog row', w: 1, s: 1, cue: 'On hands and knees, one hand on a light dumbbell. Reach the opposite leg long and row the dumbbell to your hip. Hips level.', weeks: [[2, 8], [2, 10], [2, 10, '2 s hold'], [1, 8, 'light week']] }, s: 1, cue: 'Hips level, reach long' }, 2, 10),
+      P('Core', 'C3', 'Plank shoulder taps', { alt: { name: 'Bear crawl', t: 1, cue: 'Hands and feet, knees just off the floor. Crawl a few small steps forward and back, back flat.', weeks: [[2, 20], [2, 25], [2, 30], [1, 20, 'light week']] }, cue: 'Feet wide, hips still' }, 2, 24),
     ],
   },
   3: {
@@ -457,10 +460,10 @@ const PLAN_STRENGTH = {
       P('Main', '1b', 'Single-leg hip thrust', { w: 1, s: 1, cue: 'Shoulders on the sofa, one foot down' }, 4, 10),
       P('Main', '2a', 'Single-leg RDL', { w: 1, s: 1, main: 1, cue: 'Hips square, reach the free leg back' }, 4, 8),
       P('Main', '2b', 'Bulgarian split squat', { w: 1, s: 1, cue: 'Heavier than cycle 2' }, 4, 8),
-      P('Main', '3', 'Single-leg calf raise', { w: 1, s: 1, cue: '2 s pause at the top' }, 3, 12),
-      P('Core', 'C1', 'Hollow hold', { t: 1, cue: 'Lower back flat, arms and legs long' }, 2, 30),
-      P('Core', 'C2', 'Side plank hip dips', { s: 1, cue: 'Lower the hip, lift it high' }, 2, 10),
-      P('Core', 'C3', 'Reverse crunch', { cue: 'Slow on the way down' }, 2, 15),
+      P('Main', '3', 'Single-leg calf raise', { alt: { name: 'Copenhagen plank, knee on sofa', t: 1, s: 1, cue: 'Longer holds than in cycle 2. Stop if the knee or groin hurts.', weeks: [[3, 20], [3, 25], [3, 30], [2, 20, 'light week']] }, w: 1, s: 1, cue: '2 s pause at the top' }, 3, 12),
+      P('Core', 'C1', 'Hollow hold', { alt: { name: 'Hollow body rocks', cue: 'Hollow hold shape, then rock gently from head to toe. Lower back stays down.', weeks: [[2, 10], [2, 12], [2, 15], [1, 10, 'light week']] }, t: 1, cue: 'Lower back flat, arms and legs long' }, 2, 30),
+      P('Core', 'C2', 'Side plank hip dips', { alt: { name: 'Side plank with leg lift', s: 1, cue: 'Side plank on your forearm, lift the top leg and lower it. Hips stay high.', weeks: [[2, 8], [2, 10], [2, 10, '2 s hold'], [1, 8, 'light week']] }, s: 1, cue: 'Lower the hip, lift it high' }, 2, 10),
+      P('Core', 'C3', 'Reverse crunch', { alt: { name: 'Tuck-up', cue: 'Sit on the floor, lean back a little with your hands behind you, legs out. Pull knees and chest together, then open out again.', weeks: [[2, 10], [2, 12], [2, 14], [1, 10, 'light week']] }, cue: 'Slow on the way down' }, 2, 15),
     ],
     upper: [
       P('Skill', 'S1', 'Chest-to-wall handstand', { t: 1, cue: 'Belly to the wall, arms locked' }, 3, 35),
@@ -471,10 +474,10 @@ const PLAN_STRENGTH = {
       P('Main', '1b', 'Renegade row', { w: 1, s: 1, cue: 'Plank on dumbbells, hips still' }, 4, 6),
       P('Main', '2a', 'Half-kneeling one-arm press', { w: 1, s: 1, main: 1, cue: 'Glute of the down knee squeezed, ribs down' }, 4, 8),
       P('Main', '2b', 'Dumbbell pullover', { w: 1, cue: 'Heavier than cycle 1' }, 4, 10),
-      P('Main', '3', 'Rear delt fly', { w: 1, nobar: 1, cue: 'Heavier than cycle 2. Upper back work until you have a pull-up bar.' }, 3, 12),
-      P('Core', 'C1', 'Hollow hold', { t: 1, cue: 'Lower back flat, arms and legs long' }, 2, 35),
-      P('Core', 'C2', 'Bird dog', { s: 1, cue: '2 s hold at full reach' }, 2, 10),
-      P('Core', 'C3', 'Plank shoulder taps', { cue: 'Feet closer than before' }, 2, 30),
+      P('Main', '3', 'Rear delt fly', { alt: { name: 'Y-T-W raise', w: 1, cue: 'Hinge forward with the 1 kg dumbbells. Lift the arms into a Y, then a T, then a W. One of each is one rep.', weeks: [[3, 8], [3, 10], [3, 8, '2 s hold'], [2, 8, 'light week']] }, w: 1, nobar: 1, cue: 'Heavier than cycle 2. Upper back work until you have a pull-up bar.' }, 3, 12),
+      P('Core', 'C1', 'Hollow hold', { alt: { name: 'Plank walk-out', cue: 'Stand, hinge down, walk your hands out to a plank, walk them back, stand up.', weeks: [[2, 6], [2, 8], [2, 10], [1, 6, 'light week']] }, t: 1, cue: 'Lower back flat, arms and legs long' }, 2, 35),
+      P('Core', 'C2', 'Bird dog', { alt: { name: 'Bird dog row', w: 1, s: 1, cue: 'A bit heavier than in cycle 2. Hips level.', weeks: [[2, 10], [2, 12], [2, 12, '2 s hold'], [1, 10, 'light week']] }, s: 1, cue: '2 s hold at full reach' }, 2, 10),
+      P('Core', 'C3', 'Plank shoulder taps', { alt: { name: 'Plank up-down', cue: 'From a forearm plank, push up to your hands one arm at a time, then back down. Hips still. Each up and down is one rep.', weeks: [[2, 8], [2, 10], [2, 12], [1, 8, 'light week']] }, cue: 'Feet closer than before' }, 2, 30),
     ],
   },
   4: {
@@ -483,10 +486,10 @@ const PLAN_STRENGTH = {
       P('Main', '1b', 'Hip thrust, 3 s hold', { w: 1, cue: 'Shoulders on the sofa, hold 3 s at the top of every rep' }, 4, 10),
       P('Main', '2a', 'Single-leg RDL', { w: 1, s: 1, main: 1, cue: 'Heavier than cycle 3, lower over 3 s' }, 4, 8),
       P('Main', '2b', 'Cossack squat', { s: 1, cue: 'Wide stance, sit into one hip, other leg straight. Hold a door frame if needed.' }, 3, 6),
-      P('Main', '3', 'Single-leg calf raise', { w: 1, s: 1, cue: '3 s lowering, pause at the bottom' }, 3, 15),
-      P('Core', 'C1', 'Hollow hold', { t: 1, cue: 'Lower back flat, arms and legs long' }, 2, 40),
-      P('Core', 'C2', 'Side plank reach-through', { s: 1, cue: 'Thread the top arm under your body, then reach it up to the ceiling' }, 2, 8),
-      P('Core', 'C3', 'Lying leg raise', { cue: 'Lower back pressed down, lower the legs slowly' }, 2, 12),
+      P('Main', '3', 'Single-leg calf raise', { alt: { name: 'Copenhagen plank, foot on sofa', t: 1, s: 1, cue: 'Like before, but with the top foot on the sofa. Much harder; go back to the knee version if it hurts.', weeks: [[3, 15], [3, 20], [3, 25], [2, 15, 'light week']] }, w: 1, s: 1, cue: '3 s lowering, pause at the bottom' }, 3, 15),
+      P('Core', 'C1', 'Hollow hold', { alt: { name: 'Hollow body rocks', cue: 'Bigger rocks than in cycle 3, lower back stays down.', weeks: [[2, 15], [2, 18], [2, 20], [1, 15, 'light week']] }, t: 1, cue: 'Lower back flat, arms and legs long' }, 2, 40),
+      P('Core', 'C2', 'Side plank reach-through', { alt: { name: 'Side plank with leg lift', s: 1, cue: 'Hold the top leg up for 3 s each rep, hips high.', weeks: [[2, 10], [2, 12], [2, 12, '3 s hold'], [1, 10, 'light week']] }, s: 1, cue: 'Thread the top arm under your body, then reach it up to the ceiling' }, 2, 8),
+      P('Core', 'C3', 'Lying leg raise', { alt: { name: 'V-up', cue: 'Lie flat, lift legs and chest together and reach for your toes. Bend the knees a little if needed.', weeks: [[2, 8], [2, 10], [2, 12], [1, 8, 'light week']] }, cue: 'Lower back pressed down, lower the legs slowly' }, 2, 12),
     ],
     upper: [
       P('Skill', 'S1', 'Freestanding handstand practice', { t: 1, cue: 'Kick up away from the wall, hold what you can, bail sideways' }, 1, 300),
@@ -497,10 +500,10 @@ const PLAN_STRENGTH = {
       P('Main', '1b', 'Renegade row', { w: 1, s: 1, cue: 'Heavier than cycle 3, hips still' }, 4, 8),
       P('Main', '2a', 'Z-press', { w: 1, main: 1, cue: 'Sit on the floor, legs straight, press overhead without leaning back' }, 4, 8),
       P('Main', '2b', 'Rear delt fly', { w: 1, cue: 'Hinge forward, flat back, lift the arms out to the sides' }, 3, 12),
-      P('Main', '3', 'Band pull-apart', { nobar: 1, cue: 'Thicker band or hands closer together than before, 2 s squeeze' }, 3, 15),
-      P('Core', 'C1', 'Hollow hold', { t: 1, cue: 'Lower back flat, arms and legs long' }, 2, 40),
-      P('Core', 'C2', 'Bird dog', { s: 1, cue: '3 s hold at full reach' }, 2, 12),
-      P('Core', 'C3', 'Plank shoulder taps', { cue: 'Feet close together for more challenge' }, 2, 32),
+      P('Main', '3', 'Band pull-apart', { alt: { name: 'Band face pull', cue: 'Thicker band than before, 2 s squeeze at the back.', weeks: [[3, 15], [3, 17], [3, 15, '2 s squeeze'], [2, 15, 'light week']] }, nobar: 1, cue: 'Thicker band or hands closer together than before, 2 s squeeze' }, 3, 15),
+      P('Core', 'C1', 'Hollow hold', { alt: { name: 'Plank walk-out', cue: 'Walk the hands further out than your shoulders before walking back.', weeks: [[2, 8], [2, 10], [2, 12], [1, 8, 'light week']] }, t: 1, cue: 'Lower back flat, arms and legs long' }, 2, 40),
+      P('Core', 'C2', 'Bird dog', { alt: { name: 'Plank with arm reach', s: 1, cue: 'High plank, feet wide. Reach one arm straight forward, hold 2 s, hips still.', weeks: [[2, 8], [2, 10], [2, 10, '3 s hold'], [1, 8, 'light week']] }, s: 1, cue: '3 s hold at full reach' }, 2, 12),
+      P('Core', 'C3', 'Plank shoulder taps', { alt: { name: 'Plank to pike', cue: 'From a high plank, push the hips up into an upside-down V, then back to plank. Shoulders over the hands, like a handstand.', weeks: [[2, 8], [2, 10], [2, 12], [1, 8, 'light week']] }, cue: 'Feet close together for more challenge' }, 2, 32),
     ],
   },
 };
@@ -600,6 +603,7 @@ const PLANS = {
     perWeek: 4, kegels: true, lang: 'en', mins: { lower: '30–35', upper: '35–40' }, plan: PLAN_STRENGTH, cycles: CYCLE_INFO_STRENGTH,
     days: { lower: { label: 'Lower body', short: 'Lower', sub: 'Legs and glutes, then core' }, upper: { label: 'Upper body', short: 'Upper', sub: 'Skills, push and pull, then core' } },
     warm: { upper: ['Jumping jacks', 'Arm circles, both directions', 'Band or towel pass-throughs', 'Wrist prep: circles, rock forward and back on all fours, finger stretches'], lower: ['Jumping jacks', 'Lateral band walks, short band above the knees', 'Bodyweight squats', 'Hip hinges', 'Glute bridges'] },
+    version: { date: '2026-10-02', note: 'Some core and small exercises now change from one workout to the next' },
     coachDesc: 'trains at home in 30–40 minute lunch breaks with dumbbells and bodyweight, 4 days a week (upper/lower), and practises handstands, pull-ups and kegels. Goal: general health, fitness and a better shape.',
     safety: '',
   },
@@ -643,7 +647,7 @@ function choosePlan(k) {
 let planChosen = !!PLAN_KEY_SAVED;
 
 /* ---------- plan version (shown on Today; bump when the plan changes) ---------- */
-const PLAN_VERSION = { date: '2026-09-30', note: 'Band exercises added, weights follow your 1/3/5/8 kg dumbbells, tennis plan added' };
+const PLAN_VERSION = ACTIVE.version || { date: '2026-09-30', note: 'Band exercises added, weights follow your 1/3/5/8 kg dumbbells, tennis plan added' };
 
 /* ---------- exercise demos: stick-figure poses (side view, figure faces right, floor at y=110) ---------- */
 const STAND = { h: [100, 20], s: [100, 32], p: [100, 62], k: [100, 85], a: [100, 108], t: [110, 108] };
@@ -841,8 +845,8 @@ function animateDemo(ms) {
 requestAnimationFrame(animateDemo);
 let openDemo = null;
 /* Start/end photos from free-exercise-db (github.com/yuhonas/free-exercise-db, public domain), published alongside the page */
-const PHOTOS = new Set(['goblet-squat', 'thruster', 'glute-bridge', 'romanian-deadlift', 'single-leg-rdl', 'reverse-lunge', 'single-leg-calf-raise', 'hip-thrust', 'dead-bug', 'side-plank', 'reverse-crunch', 'table-row', 'dead-hang', 'pull-up-negative', 'incline-push-up', 'push-up', 'single-arm-row', 'shoulder-press', 'dumbbell-pullover', 'renegade-row', 'rear-delt-fly', 'lying-leg-raise', 'bulgarian-split-squat', 'single-leg-hip-thrust', 'z-press', 'half-kneeling-one-arm-press', 'kick-up-practice', 'superman', 'box-squat-to-chair', 'side-lying-external-rotation', 'standing-woodchop', 'suitcase-carry', 'bent-over-row', 'forearm-plank', 'low-step-up', 'split-squat', 'band-pull-apart', 'pallof-press', 'band-external-rotation', 'lateral-band-walk']);
-const PHOTO_ALIAS = { 'pause-goblet-squat': 'goblet-squat', 'dead-bug-with-dumbbell': 'dead-bug', 'side-plank-knees': 'side-plank', 'side-plank-hip-dips': 'side-plank', 'pause-push-up': 'push-up', 'hip-thrust-3-s-hold': 'hip-thrust', 'tempo-push-up': 'push-up', 'pull-up': 'pull-up-negative', 'deficit-reverse-lunge': 'reverse-lunge', 'side-plank-reach-through': 'side-plank', 'freestanding-handstand-practice': 'kick-up-practice', 'standing-calf-raise': 'single-leg-calf-raise', 'neutral-grip-shoulder-press': 'shoulder-press', 'single-arm-shoulder-press': 'half-kneeling-one-arm-press', 'goblet-squat-3-s-lowering': 'goblet-squat', 'push-up-on-dumbbells': 'push-up', 'push-up-on-dumbbells-3-s-lowering': 'push-up', 'forearm-plank-with-leg-lift': 'forearm-plank' };
+const PHOTOS = new Set(['goblet-squat', 'thruster', 'glute-bridge', 'romanian-deadlift', 'single-leg-rdl', 'reverse-lunge', 'single-leg-calf-raise', 'hip-thrust', 'dead-bug', 'side-plank', 'reverse-crunch', 'table-row', 'dead-hang', 'pull-up-negative', 'incline-push-up', 'push-up', 'single-arm-row', 'shoulder-press', 'dumbbell-pullover', 'renegade-row', 'rear-delt-fly', 'lying-leg-raise', 'bulgarian-split-squat', 'single-leg-hip-thrust', 'z-press', 'half-kneeling-one-arm-press', 'kick-up-practice', 'superman', 'box-squat-to-chair', 'side-lying-external-rotation', 'standing-woodchop', 'suitcase-carry', 'bent-over-row', 'forearm-plank', 'low-step-up', 'split-squat', 'band-pull-apart', 'pallof-press', 'band-external-rotation', 'lateral-band-walk', 'band-face-pull', 'plank-walk-out', 'v-up', 'slow-mountain-climbers', 'tuck-up']);
+const PHOTO_ALIAS = { 'pause-goblet-squat': 'goblet-squat', 'dead-bug-with-dumbbell': 'dead-bug', 'side-plank-knees': 'side-plank', 'side-plank-hip-dips': 'side-plank', 'pause-push-up': 'push-up', 'hip-thrust-3-s-hold': 'hip-thrust', 'tempo-push-up': 'push-up', 'pull-up': 'pull-up-negative', 'deficit-reverse-lunge': 'reverse-lunge', 'side-plank-reach-through': 'side-plank', 'freestanding-handstand-practice': 'kick-up-practice', 'standing-calf-raise': 'single-leg-calf-raise', 'neutral-grip-shoulder-press': 'shoulder-press', 'single-arm-shoulder-press': 'half-kneeling-one-arm-press', 'goblet-squat-3-s-lowering': 'goblet-squat', 'push-up-on-dumbbells': 'push-up', 'push-up-on-dumbbells-3-s-lowering': 'push-up', 'forearm-plank-with-leg-lift': 'forearm-plank', 'superman-hold': 'superman', 'long-lever-plank': 'forearm-plank', 'plank-body-saw': 'forearm-plank', 'suitcase-hold': 'suitcase-carry', 'bent-knee-leg-raise': 'lying-leg-raise', 'side-plank-with-leg-lift': 'side-plank' };
 /* Hand-picked beginner tutorials for exercises with no free photo. Embedded in the Android app; linked in the Claude page (it can't embed players). */
 const VIDEO = {
   'pike-push-up': 'paCOGgmLCA0', 'elevated-pike-push-up': 'paCOGgmLCA0', 'pike-push-up-3-s-lowering': 'paCOGgmLCA0',
@@ -851,6 +855,7 @@ const VIDEO = {
   'wall-walk': 'VpuoE246W1Y', 'wall-walk-up-hold': 'VpuoE246W1Y',
   'plank-shoulder-taps': 'gKA5LBy7WAI', 'cossack-squat': 'JaCbmoDqUc4',
   'lateral-lunge': '4m9R6PijpWI', 'skater-step': '5Et9Kg9t4nc',
+  'hollow-body-rocks': 'HAfUt2Cco74', 'bird-dog-row': 'xEDnlOxeJH4',
 };
 const canEmbed = () => !window.claude;
 const WARM_VIDEO = { id: 'c0VxUFHdYzs', title: '5 Min Full Body Warm Up with Caroline Girvan' };
@@ -871,6 +876,14 @@ const PHOTO_NOTE = {
   'freestanding-handstand-practice': 'The photo shows a wall handstand, the shape you\'re aiming for.',
   'side-plank-reach-through': 'The photo shows the basic side plank you start from.',
   'deficit-reverse-lunge': 'The photo shows a regular reverse lunge. Stand on a low step for yours.',
+  'band-face-pull': 'The photo uses a cable machine. Use your long band around a door handle at face height.',
+  'long-lever-plank': 'The photo shows the basic forearm plank. Put your elbows a little further forward.',
+  'plank-body-saw': 'The photo shows the basic forearm plank. Rock forward and back from there.',
+  'suitcase-hold': 'The photo shows two heavy bars. Hold one dumbbell in one hand and stand still.',
+  'bent-knee-leg-raise': 'The photo shows straight legs on a bench. Do yours on the floor with bent knees.',
+  'side-plank-with-leg-lift': 'The photo shows the basic side plank. Lift the top leg from there.',
+  'tuck-up': 'The photo uses a bench. Do yours sitting on the floor.',
+  'v-up': 'Bend your knees a little if straight legs are too hard.',
 };
 function photoFor(id) { const p = PHOTO_ALIAS[id] || id; return PHOTOS.has(p) ? p : null; }
 function howHTML(it) {
@@ -892,7 +905,9 @@ const GROUP_LABEL = { Skill: 'Skill work', Main: 'Main work · pairs: do a, then
 
 function itemsFor(cycle, week, day) {
   const hasBar = !!(S.state.prefs && S.state.prefs.bar);
-  return PLAN[cycle][day].filter(e => hasBar ? !e.nobar : !e.bar).map(e => {
+  const round = S.state.round || 1;
+  const useB = allSessions().filter(s => s.done && s.day === day && s.cycle === cycle && roundOf(s) === round).length % 2 === 1;
+  return PLAN[cycle][day].filter(e => hasBar ? !e.nobar : !e.bar).map(e => (useB && e.alt) || e).map(e => {
     const [sets, reps, note] = e.weeks[week - 1];
     return { id: e.id, name: e.name, group: e.group, slot: e.slot, weighted: e.weighted, time: e.time, perSide: e.perSide, cue: e.cue, sets, reps, note: note || '' };
   });
@@ -973,7 +988,7 @@ Object.assign(DE, {
   'Your note (saved)': 'Deine Notiz (gespeichert)', 'How did it feel? Your notes go into the Excel export and help plan the next cycle.': 'Wie hat es sich angefühlt? Deine Notizen landen im Excel-Export und helfen beim nächsten Zyklus.',
   'Too easy': 'Zu leicht', 'Too hard': 'Zu schwer', 'Pain or discomfort': 'Schmerzen oder Beschwerden', 'Form felt off': 'Technik fühlte sich falsch an', 'Missing equipment': 'Ausrüstung fehlt', 'Loved it': 'Super',
   'E.g. left wrist felt sore, could go heavier next time': 'Z. B. linkes Handgelenk tat weh, nächstes Mal schwerer', 'Saved': 'Gespeichert',
-  'Drawing of the movement. Tap the button for a real video tutorial.': 'Zeichnung der Bewegung. Tipp auf den Button für ein echtes Video.',
+  'Drawing of the movement. Tap the button for a real video tutorial.': 'Zeichnung der Bewegung. Tipp auf den Button für ein echtes Video.', 'No photo for this one yet': 'Für diese Übung gibt es noch kein Foto', 'Tap the button for a video tutorial.': 'Tipp auf den Button für ein Video.',
   '▶ Play video': '▶ Video abspielen', '▶ Watch the video': '▶ Video ansehen', '▶ Find a video': '▶ Video suchen', 'Show the drawing': 'Zeichnung zeigen',
   'No rest in a pair. Straight into it.': 'Keine Pause im Paar. Direkt weiter.', 'Get ready for': 'Mach dich bereit für', '+15 s': '+15 s', 'Skip rest': 'Weiter', 'Done': 'Fertig',
   "That's the workout": 'Das war das Training', 'Check all exercises': 'Alle Übungen prüfen', 'Finish and save': 'Beenden und speichern', 'All done': 'Alles erledigt',
@@ -1155,7 +1170,7 @@ DE_RX.push(
   [/^Next up: (Lower body|Upper body), cycle (\d+), week (\d+)\.$/, (m, d, c, w) => `Als Nächstes: ${deDay(d)}, Zyklus ${c}, Woche ${w}.`],
   [/^Plan: cycle (\d+), week (\d+)\. (\d+) of (\d+) workouts done\.$/, 'Plan: Zyklus $1, Woche $2. $3 von $4 Trainings erledigt.'],
   [/^Plan: cycle (\d+), week (\d+)\. (\d+) of (\d+) workouts done\. Missed a day\? The next workout simply waits for you\.$/, 'Plan: Zyklus $1, Woche $2. $3 von $4 Trainings erledigt. Einen Tag verpasst? Das nächste Training wartet einfach auf dich.'],
-  [/^Plan updated ([^:]+): (.+?)\.( Saved on this phone only; back up now and then under You\.)?$/, (m, d, n, local) => `Plan aktualisiert am ${d}: ${n === 'Band exercises added, weights follow your 1/3/5/8 kg dumbbells, tennis plan added' ? 'Band-Übungen, Gewichte nach deinen 1/3/5/8-kg-Hanteln, Tennis-Plan' : n}.${local ? ' Nur auf diesem Handy gespeichert, sichere unter „Du“ ab und zu ein Backup.' : ''}`],
+  [/^Plan updated ([^:]+): (.+?)\.( Saved on this phone only; back up now and then under You\.)?$/, (m, d, n, local) => `Plan aktualisiert am ${d}: ${n === 'Band exercises added, weights follow your 1/3/5/8 kg dumbbells, tennis plan added' ? 'Band-Übungen, Gewichte nach deinen 1/3/5/8-kg-Hanteln, Tennis-Plan' : n === 'Some core and small exercises now change from one workout to the next' ? 'Einige Rumpf- und kleine Übungen wechseln jetzt von Training zu Training' : n}.${local ? ' Nur auf diesem Handy gespeichert, sichere unter „Du“ ab und zu ein Backup.' : ''}`],
   [/^Cycle (\d+), week (\d+)$/, 'Zyklus $1, Woche $2'],
   [/^Cycle (\d+)$/, 'Zyklus $1'],
   [/^(Foundation|Build|Strength|Court-ready|Performance): (.+)$/, (m, n, f) => { const k = Object.keys(DE).find(x => x.toLowerCase() === f.toLowerCase()); return tr(n) + ': ' + (k ? DE[k] : f); }],
@@ -2030,9 +2045,9 @@ function renderFocus() {
       ? `<div class="media"><img src="ex/${pid}-0.webp" alt="${it.name}, start position"><img class="p1" src="ex/${pid}-1.webp" alt="${it.name}, end position"></div>${PHOTO_NOTE[it.id] ? `<p class="small muted" style="margin-top:-8px">${PHOTO_NOTE[it.id]}</p>` : ''}`
       : VIDEO[it.id] && playingVideo === it.id
         ? `<div class="media video"><iframe src="https://www.youtube-nocookie.com/embed/${VIDEO[it.id]}?rel=0&playsinline=1&autoplay=1&mute=1" title="${it.name} tutorial video" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe></div><div class="row between" style="margin-top:-6px"><button class="btn btn-ghost" style="padding:0" data-act="stop-video">Show the drawing</button><a class="btn btn-ghost" style="padding:0" href="https://www.youtube.com/watch?v=${VIDEO[it.id]}" target="_blank" rel="noopener">Open in YouTube</a></div>`
-        : `<div class="media">${figSVG(it)}${VIDEO[it.id]
+        : `<div class="media">${figSVG(it) || '<p class="muted" style="position:absolute;inset:0;display:grid;place-items:center;margin:0">No photo for this one yet</p>'}${VIDEO[it.id]
             ? (canEmbed() ? `<button class="vidbtn" data-act="play-video" data-id="${it.id}">▶ Play video</button>` : `<a class="vidbtn" href="https://www.youtube.com/watch?v=${VIDEO[it.id]}" target="_blank" rel="noopener">▶ Watch the video</a>`)
-            : `<a class="vidbtn" href="https://www.youtube.com/results?search_query=${vq}" target="_blank" rel="noopener">▶ Find a video</a>`}</div><p class="small muted" style="margin-top:-8px">Drawing of the movement. Tap the button for a real video tutorial.</p>`;
+            : `<a class="vidbtn" href="https://www.youtube.com/results?search_query=${vq}" target="_blank" rel="noopener">▶ Find a video</a>`}</div><p class="small muted" style="margin-top:-8px">${figFor(it.id) ? 'Drawing of the movement. Tap the button for a real video tutorial.' : 'Tap the button for a video tutorial.'}</p>`;
     const tgt = (it.time ? (it.reps >= 120 ? it.reps / 60 + ' min' : it.reps + ' s') : it.reps + ' reps') + (it.perSide ? ' each side' : '');
     const tips = TIPS[it.id] || [];
     const q = encodeURIComponent(it.name + ' exercise proper form');
