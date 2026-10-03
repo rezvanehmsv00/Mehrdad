@@ -73,7 +73,7 @@
 * { box-sizing: border-box; }
 body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 16px; line-height: 1.45; padding-inline: 16px; -webkit-tap-highlight-color: transparent; }
 .app { max-width: 520px; margin: 0 auto; padding-block: 12px calc(var(--tabbar-h) + 104px + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; gap: 20px; }
-.app.in-workout { padding-bottom: calc(190px + env(safe-area-inset-bottom, 0px)); }
+.app.in-workout { padding-bottom: calc(var(--dock-h, 190px) + 16px); }
 button, input, textarea { font: inherit; color: inherit; }
 button { background: none; border: 0; cursor: pointer; padding: 0; }
 button:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus-visible, a:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-radius: 8px; }
@@ -168,6 +168,8 @@ h3 { font-size: 18px; line-height: 1.2; letter-spacing: -0.01em; }
 .chip.target { background: var(--accent-soft); color: var(--accent); font-size: 17px; font-family: var(--display); font-weight: 700; padding: 6px 14px; }
 .chip.warn { background: var(--warn-soft); color: var(--warn); }
 .chip.good { background: var(--good-soft); color: var(--good); }
+.chip.tempo { background: var(--ink); color: var(--bg); font-size: 17px; font-family: var(--display); font-weight: 700; padding: 6px 14px; }
+.ex .chip.tempo { font-size: 14px; padding: 4px 10px; align-self: flex-start; margin-top: 4px; }
 .media { position: relative; width: 100%; max-width: 100%; aspect-ratio: 16 / 10; border-radius: 18px; overflow: hidden; background: var(--surface); border: 1px solid var(--line); }
 .media img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #fff; }
 .media.video iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #000; }
@@ -662,6 +664,7 @@ function planFromJSON(j) {
       if (!['Skill', 'Main', 'Core'].includes(group) || typeof slot !== 'string') throw new Error('bad slot');
       const id = e.id || slug(e.name);
       const o = { group, slot, name: e.name, id, weighted: !!e.weighted, time: !!e.time, perSide: !!e.perSide, bar: !!(e.bar ?? (base && base.bar)), nobar: !!(e.nobar ?? (base && base.nobar)), cue: e.cue || '', weeks: e.weeks.map(r => r.slice(0, 3)) };
+      if (typeof e.tempo === 'string') o.tempo = e.tempo;
       if (e.photo) extras.photo[id] = e.photo;
       if (e.video) extras.video[id] = e.video;
       if (e.photoNote) extras.note[id] = e.photoNote;
@@ -677,6 +680,7 @@ function planFromJSON(j) {
       if (!ci || typeof ci.name !== 'string' || typeof ci.focus !== 'string' || !(ci.rest > 0)) return null;
       plan[c] = { lower: d.lower.map(e => item(e)), upper: d.upper.map(e => item(e)) };
       cycles[c] = { name: ci.name, focus: ci.focus, rest: ci.rest };
+      if (typeof ci.tempo === 'string' && ci.tempo) cycles[c].tempo = ci.tempo;
       if (ci.nameDe) extras.de[ci.name] = ci.nameDe;
       if (ci.focusDe) extras.de[ci.focus] = ci.focusDe;
     }
@@ -969,7 +973,10 @@ function itemsFor(cycle, week, day) {
   const useB = allSessions().filter(s => s.done && s.day === day && s.cycle === cycle && roundOf(s) === round).length % 2 === 1;
   return PLAN[cycle][day].filter(e => hasBar ? !e.nobar : !e.bar).map(e => (useB && e.alt) || e).map(e => {
     const [sets, reps, note] = e.weeks[week - 1];
-    return { id: e.id, name: e.name, group: e.group, slot: e.slot, weighted: e.weighted, time: e.time, perSide: e.perSide, cue: e.cue, sets, reps, note: note || '' };
+    // tempo: the exercise's own, else the cycle's for main lifts; never when the name or week note already says it
+    let tempo = typeof e.tempo === 'string' ? e.tempo : (e.group === 'Main' && !e.time && CYCLE_INFO[cycle] && CYCLE_INFO[cycle].tempo) || '';
+    if (/\d s (down|lowering|hold)|tempo|slower/i.test(e.name + ' ' + (note || ''))) tempo = '';
+    return { id: e.id, name: e.name, group: e.group, slot: e.slot, weighted: e.weighted, time: e.time, perSide: e.perSide, cue: e.cue, sets, reps, note: note || '', ...(tempo ? { tempo } : {}) };
   });
 }
 
@@ -1045,7 +1052,7 @@ Object.assign(DE, {
   'Set done': 'Satz erledigt', 'Log it without the timer': 'Ohne Timer eintragen', 'Reps done': 'Wiederholungen', 'reps': 'Wdh.', 'reps each side': 'Wdh. pro Seite',
   'Less weight': 'Weniger Gewicht', 'More weight': 'Mehr Gewicht', 'Fewer reps': 'Weniger Wiederholungen', 'More reps': 'Mehr Wiederholungen', 'Weight in kg': 'Gewicht in kg',
   'Last time': 'Letztes Mal', 'Form tips': 'Technik-Tipps', 'Watch video demos (YouTube)': 'Videos ansehen (YouTube)', 'Add a note about this exercise': 'Notiz zu dieser Übung',
-  'Your note (saved)': 'Deine Notiz (gespeichert)', '1 dumbbell': '1 Hantel', '2 dumbbells': '2 Hanteln', 'Dumbbells': 'Hanteln', 'Rest over': 'Pause vorbei', 'Next exercise': 'Nächste Übung', 'How did it feel? Your notes go into the Excel export and help plan the next cycle.': 'Wie hat es sich angefühlt? Deine Notizen landen im Excel-Export und helfen beim nächsten Zyklus.',
+  'Your note (saved)': 'Deine Notiz (gespeichert)', '1 dumbbell': '1 Hantel', '2 dumbbells': '2 Hanteln', 'Dumbbells': 'Hanteln', 'Rest over': 'Pause vorbei', 'Lower over 3 s': 'In 3 s absenken', 'Next exercise': 'Nächste Übung', 'How did it feel? Your notes go into the Excel export and help plan the next cycle.': 'Wie hat es sich angefühlt? Deine Notizen landen im Excel-Export und helfen beim nächsten Zyklus.',
   'Too easy': 'Zu leicht', 'Too hard': 'Zu schwer', 'Pain or discomfort': 'Schmerzen oder Beschwerden', 'Form felt off': 'Technik fühlte sich falsch an', 'Missing equipment': 'Ausrüstung fehlt', 'Loved it': 'Super',
   'E.g. left wrist felt sore, could go heavier next time': 'Z. B. linkes Handgelenk tat weh, nächstes Mal schwerer', 'Saved': 'Gespeichert',
   'Drawing of the movement. Tap the button for a real video tutorial.': 'Zeichnung der Bewegung. Tipp auf den Button für ein echtes Video.', 'No photo for this one yet': 'Für diese Übung gibt es noch kein Foto', 'Your plan was updated.': 'Dein Plan wurde aktualisiert.', 'Tap the button for a video tutorial.': 'Tipp auf den Button für ein Video.',
@@ -1248,6 +1255,7 @@ DE_RX.push(
   [/^(\d+(?:\.\d+)?) kg, ([\d, ]+) reps$/, '$1 kg, $2 Wdh.'],
   [/^Try the (\d+(?:\.\d+)?) kg dumbbell$/, 'Nimm die $1-kg-Hantel'],
   [/^Try 2 × (\d+(?:\.\d+)?) kg$/, 'Nimm 2 × $1 kg'],
+  [/^Tempo: (.+)$/, (m, t) => `Tempo: ${tr(t)}`],
   [/^Your note on (.+) \(saved\)$/, (m, n) => `Deine Notiz zu ${tr(n)} (gespeichert)`],
   [/^Add a note on (.+)$/, (m, n) => `Notiz zu ${tr(n)}`],
   [/^Top dumbbell: add reps or slow down$/, 'Schwerste Hantel: mehr Wdh. oder langsamer'],
@@ -1986,6 +1994,7 @@ function setDock(html, tabs = true) {
   if (!html) { d.hidden = true; d.innerHTML = ''; return; }
   d.hidden = false; d.className = 'dock' + (tabs ? '' : ' no-tabs');
   d.innerHTML = `<div class="inner">${html}</div>`;
+  document.documentElement.style.setProperty('--dock-h', d.offsetHeight + 'px'); // keep the page's last lines above the dock
 }
 function prefs() { return Object.assign({ sound: true, vibrate: true, kegels: ACTIVE.kegels, bar: false, dumbbells: '1, 3, 5, 8', lang: ACTIVE.lang, theme: 'system' }, S.state.prefs || {}); }
 const LANG_KEY = 'lunchtime-lifts-lang-' + PLAN_KEY, THEME_KEY = 'lunchtime-lifts-theme-' + PLAN_KEY;
@@ -2095,7 +2104,7 @@ function cardHTML(it) {
   }).join('');
   return `<article class="card ex ${complete ? 'complete' : ''}" id="card-${it.id}">
     <header><span class="slot">${it.slot.startsWith('C') || it.slot.startsWith('S') ? it.slot.slice(1) : it.slot}</span>
-      <div class="stack" style="gap:2px;min-width:0;flex:1"><h3>${it.name}</h3><p class="target">${fmtTarget(it)}${it.note ? `, ${it.note}` : ''}</p></div></header>
+      <div class="stack" style="gap:2px;min-width:0;flex:1"><h3>${it.name}</h3><p class="target">${fmtTarget(it)}${it.note ? `, ${it.note}` : ''}</p>${it.tempo ? `<span class="chip tempo">Tempo: ${it.tempo}</span>` : ''}</div></header>
     ${it.weighted && !it.time ? dbPickHTML(it, 0, true) : ''}
     <div class="sets">${rows}</div>
     ${notesFoldHTML(it)}
@@ -2193,7 +2202,7 @@ function renderFocus() {
     <section class="focus" id="card-${it.id}">
       <div class="ctx"><span class="where">${stepContext(it, i)}</span>${setDotsHTML(it, i)}</div>
       <h1>${it.name}</h1>
-      <div class="chips"><span class="chip target">Set ${i + 1}: ${tgt}</span>${it.note ? `<span class="chip warn">${it.note}</span>` : ''}</div>
+      <div class="chips"><span class="chip target">Set ${i + 1}: ${tgt}</span>${it.tempo ? `<span class="chip tempo">Tempo: ${it.tempo}</span>` : ''}${it.note ? `<span class="chip warn">${it.note}</span>` : ''}</div>
       ${visual}
       ${it.cue ? `<p class="cue">${it.cue}</p>` : ''}
       ${lastHTML}
@@ -2222,7 +2231,7 @@ function restViewHTML() {
     <div class="ringwrap"><svg class="ring" viewBox="0 0 58 58" aria-hidden="true"><circle class="bg" cx="29" cy="29" r="25"/><circle class="fg" id="ringfg" cx="29" cy="29" r="25" stroke-dasharray="${C}" stroke-dashoffset="${C * (1 - left / rest.total)}"/></svg>
       <span class="bignum" id="restnum" role="timer">${fmtClock(left)}</span></div>
     ${rest.warm ? `<ul class="warmlist" style="text-align:left">${WARM[A.day].map(x => `<li>${x}</li>`).join('')}</ul>`
-      : nit ? `<div class="nextcard"><span class="small muted">Get ready for</span><b style="font-size:18px">${nit.name}</b><span class="small muted">Set ${nx.i + 1}, ${nit.time ? nit.reps + ' s' : nit.reps + ' reps'}${nit.perSide ? ' each side' : ''}</span></div>` : ''}
+      : nit ? `<div class="nextcard"><span class="small muted">Get ready for</span><b style="font-size:18px">${nit.name}</b><span class="small muted">Set ${nx.i + 1}, ${nit.time ? nit.reps + ' s' : nit.reps + ' reps'}${nit.perSide ? ' each side' : ''}</span>${nit.tempo ? `<b class="small">Tempo: ${nit.tempo}</b>` : ''}</div>` : ''}
     ${rest.warm ? '' : justDoneNotesHTML()}
   </section>`;
 }
