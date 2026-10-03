@@ -190,6 +190,12 @@ h3 { font-size: 18px; line-height: 1.2; letter-spacing: -0.01em; }
 .tagrow { display: flex; flex-wrap: wrap; gap: 8px; }
 .tag { min-height: 40px; padding: 0 14px; border-radius: 999px; border: 1.5px solid var(--line); font-size: 14px; font-weight: 600; background: var(--surface); }
 .tag[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.dbpick { display: flex; gap: 8px; }
+.dbpick button { flex: 1; min-height: 40px; border-radius: 999px; border: 1.5px solid var(--line); font-size: 14px; font-weight: 600; background: var(--surface); color: var(--ink); }
+.dbpick button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.ex .dbpick { margin-top: 10px; }
+.ex .fold { margin-top: 12px; }
+.restnotes { width: 100%; text-align: left; display: flex; flex-direction: column; gap: 10px; }
 textarea { width: 100%; min-height: 84px; border-radius: 14px; border: 1.5px solid var(--line); background: var(--bg); padding: 12px 14px; font-size: 16px; resize: vertical; }
 input[type="text"] { width: 100%; min-height: 50px; border-radius: 14px; border: 1.5px solid var(--line); background: var(--bg); padding: 0 14px; font-size: 16px; }
 .saved { font-size: 13px; color: var(--good); font-weight: 600; min-height: 18px; }
@@ -1039,7 +1045,7 @@ Object.assign(DE, {
   'Set done': 'Satz erledigt', 'Log it without the timer': 'Ohne Timer eintragen', 'Reps done': 'Wiederholungen', 'reps': 'Wdh.', 'reps each side': 'Wdh. pro Seite',
   'Less weight': 'Weniger Gewicht', 'More weight': 'Mehr Gewicht', 'Fewer reps': 'Weniger Wiederholungen', 'More reps': 'Mehr Wiederholungen', 'Weight in kg': 'Gewicht in kg',
   'Last time': 'Letztes Mal', 'Form tips': 'Technik-Tipps', 'Watch video demos (YouTube)': 'Videos ansehen (YouTube)', 'Add a note about this exercise': 'Notiz zu dieser Übung',
-  'Your note (saved)': 'Deine Notiz (gespeichert)', 'How did it feel? Your notes go into the Excel export and help plan the next cycle.': 'Wie hat es sich angefühlt? Deine Notizen landen im Excel-Export und helfen beim nächsten Zyklus.',
+  'Your note (saved)': 'Deine Notiz (gespeichert)', '1 dumbbell': '1 Hantel', '2 dumbbells': '2 Hanteln', 'Dumbbells': 'Hanteln', 'Rest over': 'Pause vorbei', 'Next exercise': 'Nächste Übung', 'How did it feel? Your notes go into the Excel export and help plan the next cycle.': 'Wie hat es sich angefühlt? Deine Notizen landen im Excel-Export und helfen beim nächsten Zyklus.',
   'Too easy': 'Zu leicht', 'Too hard': 'Zu schwer', 'Pain or discomfort': 'Schmerzen oder Beschwerden', 'Form felt off': 'Technik fühlte sich falsch an', 'Missing equipment': 'Ausrüstung fehlt', 'Loved it': 'Super',
   'E.g. left wrist felt sore, could go heavier next time': 'Z. B. linkes Handgelenk tat weh, nächstes Mal schwerer', 'Saved': 'Gespeichert',
   'Drawing of the movement. Tap the button for a real video tutorial.': 'Zeichnung der Bewegung. Tipp auf den Button für ein echtes Video.', 'No photo for this one yet': 'Für diese Übung gibt es noch kein Foto', 'Your plan was updated.': 'Dein Plan wurde aktualisiert.', 'Tap the button for a video tutorial.': 'Tipp auf den Button für ein Video.',
@@ -1241,6 +1247,9 @@ DE_RX.push(
   [/^([\d, ]+(?:kg, )?[\d, ]*) reps$/, '$1 Wdh.'],
   [/^(\d+(?:\.\d+)?) kg, ([\d, ]+) reps$/, '$1 kg, $2 Wdh.'],
   [/^Try the (\d+(?:\.\d+)?) kg dumbbell$/, 'Nimm die $1-kg-Hantel'],
+  [/^Try 2 × (\d+(?:\.\d+)?) kg$/, 'Nimm 2 × $1 kg'],
+  [/^Your note on (.+) \(saved\)$/, (m, n) => `Deine Notiz zu ${tr(n)} (gespeichert)`],
+  [/^Add a note on (.+)$/, (m, n) => `Notiz zu ${tr(n)}`],
   [/^Top dumbbell: add reps or slow down$/, 'Schwerste Hantel: mehr Wdh. oder langsamer'],
   [/^Start the (\d+) s timer$/, '$1-s-Timer starten'],
   [/^Start the (\d+) min timer$/, '$1-Min.-Timer starten'],
@@ -1269,7 +1278,7 @@ DE_RX.push(
   [/^(Lower body|Upper body), (\d+) sets logged$/, (m, d, n) => `${deDay(d)}, ${n} Sätze eingetragen`],
   [/^(Lower body|Upper body), started at (.+)\. (\d+) sets logged\.$/, (m, d, t, n) => `${deDay(d)}, begonnen um ${t}. ${n} Sätze eingetragen.`],
   [/^(Lower body|Upper body), (.+)\. (\d+) sets logged\.$/, (m, d, t, n) => `${deDay(d)}, ${t}. ${n} Sätze eingetragen.`],
-  [/^(.+): (\d+(?:\.\d+)?) kg$/, '$1: $2 kg'],
+  [/^(.+): (2 × )?(\d+(?:\.\d+)?) kg$/, (m, n, two, w) => `${tr(n)}: ${two || ''}${w} kg`],
   [/^You did (\d+) of (\d+) workouts\. That consistency is what makes the next cycle work\.$/, 'Du hast $1 von $2 Trainings gemacht. Genau diese Beständigkeit macht den nächsten Zyklus erfolgreich.'],
   [/^You did (\d+) of (\d+) workouts\. For the next cycle, block the time in your calendar first\. In a busy week, one workout of each kind still counts\.$/, 'Du hast $1 von $2 Trainings gemacht. Blocke dir für den nächsten Zyklus zuerst die Zeit im Kalender. In einer vollen Woche zählt auch ein Training von jeder Art.'],
   [/^You kept the same weight on (.+) and still hit your reps\. Start the next cycle 1–2 kg heavier on (these|it)\.$/, (m, l) => `Bei ${l.split(', ').map(tr).join(', ')} bist du beim gleichen Gewicht geblieben und hast trotzdem alle Wiederholungen geschafft. Starte den nächsten Zyklus dort mit der nächsten Hantel.`],
@@ -1484,12 +1493,12 @@ function loadXLSX() {
 }
 function exportRows() {
   const done = allSessions().filter(s => s.done).sort((a, b) => a.startedAt - b.startedAt);
-  const sets = [['Date', 'Time', 'Workout', 'Cycle', 'Week', 'Exercise', 'Set', 'Weight (kg)', 'Reps or seconds', 'Unit', 'Per side', 'Target', 'Done']];
+  const sets = [['Date', 'Time', 'Workout', 'Cycle', 'Week', 'Exercise', 'Set', 'Weight (kg)', 'Dumbbells', 'Reps or seconds', 'Unit', 'Per side', 'Target', 'Done']];
   const workouts = [['Date', 'Workout', 'Cycle', 'Week', 'Minutes', 'Sets done', 'Sets planned', 'Volume (kg)']];
   for (const s of done) {
     const d = new Date(s.startedAt), date = dayKey(d), time = pad(d.getHours()) + ':' + pad(d.getMinutes());
     for (const it of s.items || []) (s.log[it.id] || []).forEach((x, i) => {
-      sets.push([date, time, DAY_LABEL[s.day], s.cycle, s.week, it.name, i + 1, it.weighted && x.w !== '' ? +x.w : '', x.r === '' ? '' : +x.r, it.time ? 'seconds' : 'reps', it.perSide ? 'yes' : '', fmtTarget(it), x.done ? 'yes' : 'no']);
+      sets.push([date, time, DAY_LABEL[s.day], s.cycle, s.week, it.name, i + 1, it.weighted && x.w !== '' ? +x.w : '', it.weighted && x.w !== '' ? nOf(x, it.id) : '', x.r === '' ? '' : +x.r, it.time ? 'seconds' : 'reps', it.perSide ? 'yes' : '', fmtTarget(it), x.done ? 'yes' : 'no']);
     });
     const [dn, t] = setsDone(s);
     workouts.push([date, DAY_LABEL[s.day], s.cycle, s.week, s.endedAt ? Math.round((s.endedAt - s.startedAt) / 60000) : '', dn, t, volumeOf(s)]);
@@ -1508,7 +1517,7 @@ function exportRows() {
 function workbookBuffer(X, R) {
   const wb = X.utils.book_new();
   const add = (rows, name, widths) => { const ws = X.utils.aoa_to_sheet(rows); ws['!cols'] = widths.map(w => ({ wch: w })); X.utils.book_append_sheet(wb, ws, name); };
-  add(R.sets, 'Sets', [11, 7, 11, 6, 6, 26, 5, 11, 14, 8, 8, 14, 6]);
+  add(R.sets, 'Sets', [11, 7, 11, 6, 6, 26, 5, 11, 10, 14, 8, 8, 14, 6]);
   add(R.workouts, 'Workouts', [11, 11, 6, 6, 8, 9, 11, 11]);
   add(R.notes, 'Notes', [11, 11, 6, 6, 26, 26, 60]);
   add(R.days, 'Calendar', [11, 9, 20]);
@@ -1741,8 +1750,9 @@ function startWorkout(day) {
   const log = {};
   for (const it of items) {
     const last = lastFor(it.id);
-    const w = it.weighted && last ? Math.max(...last.sets.map(x => +x.w || 0)) || '' : '';
-    log[it.id] = Array.from({ length: it.sets }, () => ({ w, r: it.reps, done: false }));
+    const ls = it.weighted && last ? last.sets[last.sets.length - 1] : null;
+    const w = ls ? (+ls.w || Math.max(...last.sets.map(x => +x.w || 0)) || '') : '';
+    log[it.id] = Array.from({ length: it.sets }, () => it.weighted ? { w, n: nOf(ls, it.id), r: it.reps, done: false } : { w, r: it.reps, done: false });
   }
   A = { id: 's' + Date.now().toString(36), day, cycle, week, round: S.state.round || 1, startedAt: Date.now(), endedAt: null, done: false, warmup: false, items, log };
   S.resumable = null; pickDay = null; wview = 'focus';
@@ -1849,7 +1859,18 @@ function tickRest() {
   const C = 2 * Math.PI * 25;
   if (left <= 0) {
     beep(880, 0.18); beep(1175, 0.25, 0.22); buzz([200, 100, 200]);
-    if (wview === 'focus') { stopRest(); return; }
+    if (wview === 'focus') {
+      if (document.querySelector('.restview details[data-fold="notes"][open]')) {
+        rest.go = true;
+        if (num) num.textContent = fmtClock(0);
+        if (fg) fg.setAttribute('stroke-dashoffset', String(C));
+        const h = document.querySelector('.restview h2'); if (h) h.textContent = 'Rest over';
+        const sk = document.querySelector('[data-act="rest-skip"]'); if (sk) sk.textContent = 'Next exercise';
+        const ad = document.querySelector('[data-act="rest-add"]'); if (ad) ad.hidden = true;
+        return;
+      }
+      stopRest(); return;
+    }
     rest.go = true; drawRest();
     setTimeout(() => { if (rest && rest.go) stopRest(); }, 4000);
     return;
@@ -1927,7 +1948,7 @@ function finishOld(sess) {
 }
 function volumeOf(s) {
   let v = 0;
-  for (const it of s.items || []) if (it.weighted && !it.time) for (const x of s.log[it.id] || []) if (x.done) v += (+x.w || 0) * (+x.r || 0) * (it.perSide ? 2 : 1);
+  for (const it of s.items || []) if (it.weighted && !it.time) for (const x of s.log[it.id] || []) if (x.done) v += loadOf(x, it.id) * (+x.r || 0) * (it.perSide ? 2 : 1);
   return Math.round(v);
 }
 function setsDone(s) { let d = 0, t = 0; for (const it of s.items || []) for (const x of s.log[it.id] || []) { t++; if (x.done) d++; } return [d, t]; }
@@ -1940,11 +1961,12 @@ function renderSummary() {
   const bests = [];
   for (const it of s.items) {
     if (!it.weighted) continue;
-    const now = Math.max(0, ...s.log[it.id].filter(x => x.done).map(x => +x.w || 0));
-    if (!now) continue;
+    const dn = s.log[it.id].filter(x => x.done && +x.w);
+    if (!dn.length) continue;
+    const top = dn.reduce((a, x) => loadOf(x, it.id) > loadOf(a, it.id) ? x : a), now = loadOf(top, it.id);
     let prev = 0;
-    for (const o of S.sessions) if (o.id !== s.id && o.log && o.log[it.id]) prev = Math.max(prev, ...o.log[it.id].filter(x => x.done).map(x => +x.w || 0));
-    if (prev && now > prev) bests.push(`${it.name}: ${now} kg`);
+    for (const o of S.sessions) if (o.id !== s.id && o.log && o.log[it.id]) prev = Math.max(prev, ...o.log[it.id].filter(x => x.done).map(x => loadOf(x, it.id)));
+    if (prev && now > prev) bests.push(`${it.name}: ${fmtW(+top.w, nOf(top, it.id))}`);
   }
   view.innerHTML = `
   <section class="greet"><h3>Workout saved</h3><h1>Nice work.</h1><p class="muted">${DAY_LABEL[s.day]}, cycle ${s.cycle}, week ${s.week}</p></section>
@@ -1977,6 +1999,15 @@ function applyLook() {
   i18nStart();
 }
 function dumbbells() { const l = String(prefs().dumbbells).split(/[,; ]+/).map(Number).filter(n => n > 0).sort((a, b) => a - b); return l.length ? [...new Set(l)] : [1, 3, 5, 8]; }
+/* 1 or 2 dumbbells per set (x.n). Sets logged before this existed have no n; these exercises usually take two. */
+const TWO_DB = new Set(['romanian-deadlift', 'reverse-lunge', 'shoulder-press', 'thruster', 'bulgarian-split-squat', 'deficit-reverse-lunge', 'renegade-row', 'rear-delt-fly', 'y-t-w-raise', 'z-press', 'bent-over-row', 'neutral-grip-shoulder-press', 'low-step-up', 'split-squat']);
+function nOf(x, id) { return x && (x.n === 1 || x.n === 2) ? x.n : TWO_DB.has(id) ? 2 : 1; }
+function loadOf(x, id) { return (+x.w || 0) * nOf(x, id); }
+function fmtW(w, n) { return (n === 2 ? '2 × ' : '') + w + ' kg'; }
+function dbPickHTML(it, i, all) {
+  const n = nOf(A.log[it.id][i], it.id);
+  return `<div class="dbpick" role="group" aria-label="Dumbbells">${[1, 2].map(k => `<button data-act="db" data-id="${it.id}" data-i="${i}" data-v="${k}"${all ? ' data-all="1"' : ''} aria-pressed="${n === k}">${k === 1 ? '1 dumbbell' : '2 dumbbells'}</button>`).join('')}</div>`;
+}
 function nextWeight(cur, dir) {
   const l = [0, ...dumbbells()]; cur = +cur || 0;
   if (dir > 0) { const n = l.find(x => x > cur + 1e-9); return n === undefined ? cur : n; }
@@ -2065,7 +2096,9 @@ function cardHTML(it) {
   return `<article class="card ex ${complete ? 'complete' : ''}" id="card-${it.id}">
     <header><span class="slot">${it.slot.startsWith('C') || it.slot.startsWith('S') ? it.slot.slice(1) : it.slot}</span>
       <div class="stack" style="gap:2px;min-width:0;flex:1"><h3>${it.name}</h3><p class="target">${fmtTarget(it)}${it.note ? `, ${it.note}` : ''}</p></div></header>
+    ${it.weighted && !it.time ? dbPickHTML(it, 0, true) : ''}
     <div class="sets">${rows}</div>
+    ${notesFoldHTML(it)}
   </article>`;
 }
 function setDotsHTML(it, cur) {
@@ -2078,10 +2111,11 @@ function lastNoteFor(id, excludeId) {
   return null;
 }
 function noteText(n) { return [(n.tags || []).join(', '), n.text].filter(Boolean).join(': '); }
-function notesFoldHTML(it) {
+function notesFoldHTML(it, named) {
   const n = noteOf(A, it.id) || { text: '', tags: [] };
   const has = n.text || (n.tags && n.tags.length);
-  return `<details class="fold" ${openNotes === it.id ? 'open' : ''} data-fold="notes" data-id="${it.id}"><summary>${has ? 'Your note (saved)' : 'Add a note about this exercise'}</summary><div class="in">
+  const label = named ? (has ? `Your note on ${it.name} (saved)` : `Add a note on ${it.name}`) : (has ? 'Your note (saved)' : 'Add a note about this exercise');
+  return `<details class="fold" ${openNotes === it.id ? 'open' : ''} data-fold="notes" data-id="${it.id}"><summary>${label}</summary><div class="in">
     <p class="small muted">How did it feel? Your notes go into the Excel export and help plan the next cycle.</p>
     <div class="tagrow">${NOTE_TAGS.map(t => `<button class="tag" data-act="note-tag" data-id="${it.id}" data-v="${t}" aria-pressed="${(n.tags || []).includes(t)}">${t}</button>`).join('')}</div>
     <textarea id="note-${it.id}" data-note="${it.id}" placeholder="E.g. left wrist felt sore, could go heavier next time">${n.text || ''}</textarea>
@@ -2089,6 +2123,16 @@ function notesFoldHTML(it) {
   </div></details>`;
 }
 let openNotes = null;
+// the exercise(s) just finished: the last step before the current one, plus its partner when it closes a pair
+function justDone() {
+  const st = stepsOf(A), cur = currentStep();
+  const k = cur ? st.findIndex(x => x.id === cur.id && x.i === cur.i) : st.length;
+  const p = st[k - 1]; if (!p) return [];
+  const it = itemOf(p.id), out = [it], m = /^(\d)b$/.exec(it.slot);
+  if (it.group === 'Main' && m) { const a = A.items.find(x => x.group === 'Main' && x.slot === m[1] + 'a'); if (a) out.unshift(a); }
+  return out;
+}
+const justDoneNotesHTML = () => { const l = justDone(); return l.length ? `<div class="restnotes">${l.map(x => notesFoldHTML(x, true)).join('')}</div>` : ''; };
 function renderFocus() {
   if (!A) return;
   const st = currentStep();
@@ -2116,6 +2160,7 @@ function renderFocus() {
     const [d, t] = setsDone(A);
     body = `<section class="focus" style="text-align:center;align-items:center;padding-top:24px">
       <h1>That's the workout</h1><p class="muted">${d} of ${t} sets done. Save it to count it toward your week.</p>
+      ${justDoneNotesHTML().replace('class="restnotes"', 'class="restnotes" style="margin-top:8px"')}
       <button class="btn btn-ghost" data-act="list">Check all exercises</button></section>`;
     dock = `<button class="btn btn-primary big" data-act="finish">Finish and save</button>`;
   } else {
@@ -2137,9 +2182,10 @@ function renderFocus() {
     const last = lastFor(it.id, A.id);
     let lastHTML = '';
     if (last) {
-      const w = it.weighted ? Math.max(...last.sets.map(s => +s.w || 0)) : 0;
+      const ls = last.sets[last.sets.length - 1];
+      const w = it.weighted ? (+ls.w || Math.max(...last.sets.map(s => +s.w || 0))) : 0, ln2 = nOf(ls, it.id);
       const li = last.item, hitAll = li && last.sets.length >= li.sets && last.sets.every(s => (+s.r) >= li.reps);
-      lastHTML = `<p class="lastline"><span class="muted">Last time</span><b>${w ? w + ' kg, ' : ''}${last.sets.map(s => it.time ? s.r + ' s' : s.r).join(', ')}${it.time ? '' : ' reps'}</b>${it.weighted && hitAll && !/light/.test(it.note) ? `<span class="chip good">${nextWeight(w, 1) > w ? 'Try the ' + nextWeight(w, 1) + ' kg dumbbell' : 'Top dumbbell: add reps or slow down'}</span>` : ''}</p>`;
+      lastHTML = `<p class="lastline"><span class="muted">Last time</span><b>${w ? fmtW(w, ln2) + ', ' : ''}${last.sets.map(s => it.time ? s.r + ' s' : s.r).join(', ')}${it.time ? '' : ' reps'}</b>${it.weighted && hitAll && !/light/.test(it.note) ? `<span class="chip good">${nextWeight(w, 1) > w ? (ln2 === 2 ? 'Try 2 × ' + nextWeight(w, 1) + ' kg' : 'Try the ' + nextWeight(w, 1) + ' kg dumbbell') : 'Top dumbbell: add reps or slow down'}</span>` : ''}</p>`;
     }
     const ln = lastNoteFor(it.id, A.id);
     const running = hold && hold.id === it.id && hold.i === i;
@@ -2158,7 +2204,7 @@ function renderFocus() {
     dock = it.time
       ? `<button class="btn btn-primary big ${running ? 'running' : ''}" data-act="hold" data-id="${it.id}" data-i="${i}"><span id="hold-${it.id}-${i}">${running ? holdLabel(it, i) : it.perSide ? 'Start: ' + it.reps + ' s left, then right' : 'Start the ' + tgt + ' timer'}</span></button>
          <button class="btn btn-ghost" data-act="check" data-id="${it.id}" data-i="${i}">Log it without the timer</button>`
-      : `<div class="steppers ${it.weighted ? '' : 'one'}">${it.weighted ? stepperHTML(it, i, 'w') : ''}${stepperHTML(it, i, 'r')}</div>
+      : `${it.weighted ? dbPickHTML(it, i, false) : ''}<div class="steppers ${it.weighted ? '' : 'one'}">${it.weighted ? stepperHTML(it, i, 'w') : ''}${stepperHTML(it, i, 'r')}</div>
          <button class="btn btn-primary big" data-act="check" data-id="${it.id}" data-i="${i}">Set done</button>`;
     flash = '';
   }
@@ -2177,6 +2223,7 @@ function restViewHTML() {
       <span class="bignum" id="restnum" role="timer">${fmtClock(left)}</span></div>
     ${rest.warm ? `<ul class="warmlist" style="text-align:left">${WARM[A.day].map(x => `<li>${x}</li>`).join('')}</ul>`
       : nit ? `<div class="nextcard"><span class="small muted">Get ready for</span><b style="font-size:18px">${nit.name}</b><span class="small muted">Set ${nx.i + 1}, ${nit.time ? nit.reps + ' s' : nit.reps + ' reps'}${nit.perSide ? ' each side' : ''}</span></div>` : ''}
+    ${rest.warm ? '' : justDoneNotesHTML()}
   </section>`;
 }
 function refreshCard(id) {
@@ -2494,7 +2541,7 @@ function computeReview(c, r) {
       setsDoneN++;
       if (it.time) maxT = Math.max(maxT, +x.r || 0);
       else { hitTotal++; e.hitTotal++; if ((+x.r || 0) >= it.reps) { hit++; e.hit++; } }
-      if (it.weighted) maxW = Math.max(maxW, +x.w || 0);
+      if (it.weighted) maxW = Math.max(maxW, loadOf(x, it.id));
     }
     if (maxW) e.ws.push(maxW);
     if (maxT) e.secs.push(maxT);
@@ -2595,7 +2642,7 @@ function renderHistory() {
   const series = {};
   for (const s of [...done].reverse()) for (const it of s.items || []) {
     if (!it.weighted) continue;
-    const m = Math.max(0, ...(s.log[it.id] || []).filter(x => x.done).map(x => +x.w || 0));
+    const m = Math.max(0, ...(s.log[it.id] || []).filter(x => x.done).map(x => loadOf(x, it.id)));
     if (!m) continue;
     (series[it.id] = series[it.id] || { name: it.name, pts: [] }).pts.push(m);
   }
@@ -2610,7 +2657,7 @@ function renderHistory() {
     const mins = s.endedAt ? Math.round((s.endedAt - s.startedAt) / 60000) : 0;
     const rows = (s.items || []).filter(it => (s.log[it.id] || []).some(x => x.done)).map(it => {
       const L = s.log[it.id].filter(x => x.done);
-      const txt = it.time ? L.map(x => x.r + 's').join(', ') : (() => { const ws = [...new Set(L.map(x => +x.w || 0))]; return it.weighted && ws.length === 1 && ws[0] ? ws[0] + ' kg: ' + L.map(x => x.r).join(', ') : L.map(x => (it.weighted && +x.w ? x.w + ' kg × ' : '') + x.r).join(', '); })();
+      const txt = it.time ? L.map(x => x.r + 's').join(', ') : (() => { const ws = [...new Set(L.map(x => +x.w ? fmtW(+x.w, nOf(x, it.id)) : ''))]; return it.weighted && ws.length === 1 && ws[0] ? ws[0] + ': ' + L.map(x => x.r).join(', ') : L.map(x => (it.weighted && +x.w ? fmtW(+x.w, nOf(x, it.id)) + ': ' : '') + x.r).join(', '); })();
       const nn = noteOf(s, it.id);
       return `<div class="r"><span>${it.name}</span><span>${txt}</span></div>${nn && (nn.text || (nn.tags && nn.tags.length)) ? `<p class="note">Note: ${escapeHTML(noteText(nn))}</p>` : ''}`;
     }).join('');
@@ -2750,6 +2797,11 @@ document.addEventListener('click', e => {
       const cur = parseFloat(s[f]) || 0;
       s[f] = f === 'w' ? nextWeight(cur, act[1] === '+' ? 1 : -1) : Math.max(0, +(cur + (act[1] === '+' ? step : -step)).toFixed(1));
       if (f === 'w') for (let k = i + 1; k < A.log[id].length; k++) if (!A.log[id][k].done) A.log[id][k].w = s.w;
+      refreshCard(id); saveActiveSoon(); break;
+    }
+    case 'db': {
+      const L = A.log[id], k = +v;
+      L.forEach((x, j) => { if (b.dataset.all || j === i || (j > i && !x.done)) x.n = k; });
       refreshCard(id); saveActiveSoon(); break;
     }
     case 'check': {
