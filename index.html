@@ -173,6 +173,13 @@ h3 { font-size: 18px; line-height: 1.2; letter-spacing: -0.01em; }
 .media { position: relative; width: 100%; max-width: 100%; aspect-ratio: 16 / 10; border-radius: 18px; overflow: hidden; background: var(--surface); border: 1px solid var(--line); }
 .media img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #fff; }
 .media.video iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #000; }
+.media.short { aspect-ratio: 9 / 16; width: auto; height: min(44vh, 420px); max-width: 100%; margin: 0 auto; background: #000; }
+.media.short iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.wg h1 { margin: 2px 0 0; }
+.wgtime { display: flex; align-items: center; gap: 14px; }
+.wgtime .bignum { font-size: 44px; min-width: 3.2ch; }
+.wgbar { flex: 1; height: 10px; border-radius: 99px; background: var(--sunken); overflow: hidden; }
+.wgbar i { display: block; height: 100%; width: 0; background: var(--accent, var(--ink)); border-radius: 99px; transition: width .25s linear; }
 .vidbtn { position: absolute; right: 10px; top: 10px; min-height: 44px; padding: 0 14px; border-radius: 999px; background: var(--ink); color: var(--bg); font-weight: 700; font-size: 14px; display: inline-flex; align-items: center; text-decoration: none; }
 .media .p1 { animation: flip 3s ease-in-out infinite; }
 .media .fig { position: absolute; inset: 0; width: 100%; height: 100%; }
@@ -304,6 +311,17 @@ input[type="text"] { width: 100%; min-height: 50px; border-radius: 14px; border:
 .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; color: var(--muted); font-weight: 600; }
 .legend span { display: inline-flex; align-items: center; gap: 6px; }
 .legend i { width: 14px; height: 14px; border-radius: 4px; display: inline-block; }
+/* cycle progress (History) and cycle start/end marks in the calendar */
+.cycbar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
+.cycbar .sg { height: 12px; border-radius: 99px; background: var(--sunken); overflow: hidden; }
+.cycbar .sg i { display: block; height: 100%; background: var(--accent); border-radius: 99px; }
+.cycbar .sg.cur { box-shadow: inset 0 0 0 1.5px var(--accent); }
+.cyclabels { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; font-size: 12px; color: var(--muted); font-weight: 600; margin-top: -6px; }
+.cyclabels .cur { color: var(--ink); }
+.dc .cms { display: flex; gap: 2px; }
+.dc .cm { font-size: 8.5px; line-height: 1; font-weight: 800; padding: 1.5px 3px; border-radius: 4px; background: var(--ink); color: var(--bg); letter-spacing: 0; white-space: nowrap; }
+.cal.month.marked .dc { aspect-ratio: auto; height: 52px; }
+.cal.month .dc:has(.cms) { gap: 0; }
 .legend i.lower { background: var(--lower); } .legend i.upper { background: var(--upper); } .legend i.yoga { background: var(--yoga); border: 1px solid var(--yoga-ink); } .legend i.rest { background: var(--rest); } .legend i.tennis { background: var(--tennis); border: 1px solid var(--tennis-ink); }
 
 /* summary, history, review, settings */
@@ -610,9 +628,14 @@ const PLANS = {
   strength: {
     title: 'Strength and shape', desc: '4 days a week, lower and upper body, handstand and pull-up goals, kegels',
     alt: { key: 'yoga', label: 'Yoga', ask: 'No, I\'d rather do yoga', instead: 'Do yoga instead', logged: 'Yoga day logged.', title: 'Yoga day', text: 'Nice choice for recovery. Your next workout waits for you: ', counts: false },
-    perWeek: 4, kegels: true, lang: 'en', mins: { lower: '30–35', upper: '35–40' }, plan: PLAN_STRENGTH, cycles: CYCLE_INFO_STRENGTH,
-    days: { lower: { label: 'Lower body', short: 'Lower', sub: 'Legs and glutes, then core' }, upper: { label: 'Upper body', short: 'Upper', sub: 'Skills, push and pull, then core' } },
-    warm: { upper: ['Jumping jacks', 'Arm circles, both directions', 'Band or towel pass-throughs', 'Wrist prep: circles, rock forward and back on all fours, finger stretches'], lower: ['Jumping jacks', 'Lateral band walks, short band above the knees', 'Bodyweight squats', 'Hip hinges', 'Glute bridges'] },
+    perWeek: 4, kegels: true, lang: 'en', mins: { lower: '35–40', upper: '35–40' }, plan: PLAN_STRENGTH, cycles: CYCLE_INFO_STRENGTH,
+    days: { lower: { label: 'Lower body', short: 'Lower', sub: 'Jumps, legs and glutes, then core' }, upper: { label: 'Upper body', short: 'Upper', sub: 'Skills, push and pull, then core' } },
+    // warm-up: guided, one move at a time (45 s each, moves on by itself). plans/rez/plan.json "warm" adds a short video or photo per move; the follow-along video is optional
+    warmGuided: true,
+    warm: {
+      upper: ['Jumping jacks', 'Arm circles, both directions', 'Band pull-aparts', 'Band or towel pass-throughs', 'Scapula push-ups: arms straight, let the shoulder blades come together, then push the floor away', 'Wrist prep: circles, rock forward and back on all fours, finger stretches'],
+      lower: ['Jumping jacks', '90/90 hip switches: sit with both knees bent to one side, swing them to the other side', 'Side-to-side lunge shifts, no weight', 'Lateral band walks, short band above the knees', 'Glute bridges', 'A light practice set of your first lift'],
+    },
     version: { date: '2026-10-02', note: 'Some core and small exercises now change from one workout to the next' },
     coachDesc: 'trains at home in 30–40 minute lunch breaks with dumbbells and bodyweight, 4 days a week (upper/lower), and practises handstands, pull-ups and kegels. Goal: general health, fitness and a better shape.',
     safety: '',
@@ -665,6 +688,7 @@ function planFromJSON(j) {
       const id = e.id || slug(e.name);
       const o = { group, slot, name: e.name, id, weighted: !!e.weighted, time: !!e.time, perSide: !!e.perSide, bar: !!(e.bar ?? (base && base.bar)), nobar: !!(e.nobar ?? (base && base.nobar)), cue: e.cue || '', weeks: e.weeks.map(r => r.slice(0, 3)) };
       if (typeof e.tempo === 'string') o.tempo = e.tempo;
+      if (e.rest > 0) o.rest = e.rest;
       if (e.photo) extras.photo[id] = e.photo;
       if (e.video) extras.video[id] = e.video;
       if (e.photoNote) extras.note[id] = e.photoNote;
@@ -688,7 +712,21 @@ function planFromJSON(j) {
     const v = j.version;
     const version = v && typeof v.date === 'string' && typeof v.note === 'string' ? { date: v.date, note: v.note, noteDe: v.noteDe || '' } : null;
     const nextTip = j.nextTip && [1, 2, 3, 4].every(c => typeof j.nextTip[c] === 'string') ? j.nextTip : null;
-    return { rev: j.rev, plan, cycles, version, kegel, nextTip, extras };
+    // optional guided warm-up: { lower: [...], upper: [...] }, each move { name, cue, video (YouTube id) | photo | first: true (light set of the first lift) }
+    let warm = null;
+    if (j.warm && ['lower', 'upper'].every(d => Array.isArray(j.warm[d]) && j.warm[d].length && j.warm[d].every(w => w && typeof w.name === 'string' && w.name))) {
+      warm = {};
+      for (const d of ['lower', 'upper']) warm[d] = j.warm[d].map(w => {
+        const o = { name: w.name, cue: typeof w.cue === 'string' ? w.cue : '' };
+        if (typeof w.video === 'string' && /^[\w-]{11}$/.test(w.video)) o.video = w.video;
+        if (typeof w.photo === 'string') o.photo = w.photo;
+        if (w.first) o.first = true;
+        if (w.nameDe) extras.de[w.name] = w.nameDe;
+        if (w.cueDe && o.cue) extras.de[o.cue] = w.cueDe;
+        return o;
+      });
+    }
+    return { rev: j.rev, plan, cycles, version, kegel, nextTip, warm, extras };
   } catch (e) { return null; }
 }
 function readPlanFile() { try { return JSON.parse(localStorage.getItem(PLAN_FILE_LS) || 'null'); } catch (e) { return null; } }
@@ -699,6 +737,7 @@ if (PLAN_START) {
   ACTIVE.plan = PLAN_START.plan; ACTIVE.cycles = PLAN_START.cycles; planRev = PLAN_START.rev;
   if (PLAN_START.version) ACTIVE.version = PLAN_START.version;
   if (PLAN_START.nextTip) ACTIVE.nextTip = PLAN_START.nextTip;
+  if (PLAN_START.warm) ACTIVE.warm = PLAN_START.warm;
   if (PLAN_START.kegel) Object.assign(KEGEL, PLAN_START.kegel);
 }
 const PLAN = ACTIVE.plan;
@@ -976,7 +1015,7 @@ function itemsFor(cycle, week, day) {
     // tempo: the exercise's own, else the cycle's for main lifts; never when the name or week note already says it
     let tempo = typeof e.tempo === 'string' ? e.tempo : (e.group === 'Main' && !e.time && CYCLE_INFO[cycle] && CYCLE_INFO[cycle].tempo) || '';
     if (/\d s (down|lowering|hold)|tempo|slower/i.test(e.name + ' ' + (note || ''))) tempo = '';
-    return { id: e.id, name: e.name, group: e.group, slot: e.slot, weighted: e.weighted, time: e.time, perSide: e.perSide, cue: e.cue, sets, reps, note: note || '', ...(tempo ? { tempo } : {}) };
+    return { id: e.id, name: e.name, group: e.group, slot: e.slot, weighted: e.weighted, time: e.time, perSide: e.perSide, cue: e.cue, sets, reps, note: note || '', ...(tempo ? { tempo } : {}), ...(e.rest ? { rest: e.rest } : {}) };
   });
 }
 
@@ -1049,6 +1088,16 @@ Object.assign(DE, {
   'Leg swings, front to back and side to side': 'Beinschwingen, vor und zurück und seitlich', 'Bodyweight squats to a chair': 'Kniebeugen zum Stuhl ohne Gewicht',
   'Arm circles, both directions': 'Armkreisen, in beide Richtungen', 'Light band pull-aparts': 'Leichte Band Pull-Aparts', 'Slow shadow swings: forehands and backhands': 'Langsame Schattenschläge: Vorhand und Rückhand',
   'Gentle wrist circles and forearm turns, only pain-free': 'Sanftes Handgelenkkreisen und Unterarmdrehen, nur schmerzfrei',
+  'Jumping jacks': 'Hampelmänner', 'Band pull-aparts': 'Band Pull-Aparts', 'Band or towel pass-throughs': 'Band oder Handtuch über den Kopf nach hinten führen',
+  'Scapula push-ups: arms straight, let the shoulder blades come together, then push the floor away': 'Schulterblatt-Liegestütze: Arme gestreckt, Schulterblätter zusammenkommen lassen, dann den Boden wegdrücken',
+  'Wrist prep: circles, rock forward and back on all fours, finger stretches': 'Handgelenke vorbereiten: kreisen, im Vierfüßlerstand vor und zurück wippen, Finger dehnen',
+  '90/90 hip switches: sit with both knees bent to one side, swing them to the other side': '90/90-Hüftwechsel: sitzen, beide Knie zu einer Seite gebeugt, dann zur anderen Seite schwingen',
+  'Side-to-side lunge shifts, no weight': 'Seitliche Ausfallschritte im Wechsel, ohne Gewicht', 'Lateral band walks, short band above the knees': 'Seitliche Band-Walks, kurzes Band über den Knien',
+  'Glute bridges': 'Glute Bridges', 'A light practice set of your first lift': 'Ein leichter Übungssatz deiner ersten Hauptübung',
+  'Jumps, legs and glutes, then core': 'Sprünge, Beine und Po, dann Rumpf', 'Prefer a follow-along video?': 'Lieber mit Video mitmachen?',
+  'Pause': 'Pause', 'Resume': 'Weiter', 'Light week': 'Leichte Woche', 'Cycle starts': 'Zyklus beginnt', 'Cycle done': 'Zyklus fertig', 'Missed a day? The next workout simply waits for you.': 'Einen Tag verpasst? Das nächste Training wartet einfach auf dich.', 'Start the warm-up': 'Aufwärmen starten', "Skip, I'm already warm": 'Überspringen, ich bin schon warm', 'Finish warm-up': 'Aufwärmen beenden', 'Next move': 'Nächste Übung',
+  'Last one, then your workout starts.': 'Die letzte, dann geht dein Training los.', '▶ Watch the short video': '▶ Kurzes Video ansehen',
+  'Light practice set of your first lift': 'Leichter Übungssatz deiner ersten Hauptübung', 'Start position': 'Startposition', 'End position': 'Endposition',
   'Set done': 'Satz erledigt', 'Log it without the timer': 'Ohne Timer eintragen', 'Reps done': 'Wiederholungen', 'reps': 'Wdh.', 'reps each side': 'Wdh. pro Seite',
   'Less weight': 'Weniger Gewicht', 'More weight': 'Mehr Gewicht', 'Fewer reps': 'Weniger Wiederholungen', 'More reps': 'Mehr Wiederholungen', 'Weight in kg': 'Gewicht in kg',
   'Last time': 'Letztes Mal', 'Form tips': 'Technik-Tipps', 'Watch video demos (YouTube)': 'Videos ansehen (YouTube)', 'Add a note about this exercise': 'Notiz zu dieser Übung',
@@ -1225,6 +1274,12 @@ DE_RX.push(
   [/^(No workouts yet|\d+ workouts?)((, \d+ (yoga|tennis|rest))*)$/, (m, a, rest) => [a, ...rest.split(', ').filter(Boolean)].map(p => p === 'No workouts yet' ? 'Noch keine Trainings' : p.replace(/^(\d+) workouts?$/, (x, n) => n + ' ' + plural(n, 'Training', 'Trainings')).replace(/^(\d+) rest$/, (x, n) => n + ' ' + plural(n, 'Ruhetag', 'Ruhetage')).replace(/^(\d+) tennis$/, '$1 Tennis').replace(/^(\d+) yoga$/, '$1 Yoga')).join(', ')],
   [/^(\d+) × (\d+)( s)? \/side$/, '$1 × $2$3 /Seite'],
   [/^Exercise (\d+) of (\d+)$/, 'Übung $1 von $2'],
+  [/^Move (\d+) of (\d+)$/, 'Bewegung $1 von $2'],
+  [/^(\d+) of (\d+) workouts$/, '$1 von $2 Trainings'],
+  [/^Week (\d)$/, 'Woche $1'],
+  [/^(\d+) to go\. At (\d+) a week, you'd finish around (.+)\.$/, 'Noch $1. Bei $2 pro Woche bist du etwa am $3 fertig.'],
+  [/^(\d+) moves, 45 seconds each\. The app moves on by itself, with a short video for each move\.$/, '$1 Bewegungen, je 45 Sekunden. Die App macht von allein weiter, mit einem kurzen Video zu jeder Bewegung.'],
+  [/^Light practice set: (.+)$/, (m, n) => 'Leichter Übungssatz: ' + tr(n)],
   [/^Core, round (\d+) of (\d+)$/, 'Rumpf, Runde $1 von $2'],
   [/^Pair (\d+), exercise ([ab])$/, 'Paar $1, Übung $2'],
   [/^Set (\d+) of (\d+)$/, 'Satz $1 von $2'],
@@ -1598,6 +1653,7 @@ async function checkPlanFile() {
     if (n.version) Object.assign(PLAN_VERSION, n.version);
     if (n.kegel) Object.assign(KEGEL, n.kegel);
     if (n.nextTip) ACTIVE.nextTip = n.nextTip;
+    if (n.warm) Object.assign(WARM, n.warm);
     applyPlanExtras(n.extras); planRev = n.rev;
     if (screen !== 'workout') render();
     toast('Your plan was updated.');
@@ -1806,8 +1862,62 @@ function holdLabel(it, i) {
   return s.done ? fmtClock(s.r) + (it.perSide ? ' each side' : '') : '▶ ' + fmtClock(it.reps) + (it.perSide ? ' left, then right' : '');
 }
 const WARM = ACTIVE.warm;
+/* guided warm-up (plans with warmGuided): one move at a time, WARM_SECS each, moves on by itself */
+const WARM_SECS = 45;
+let wg = null; // { i, end, left (set while paused) }
+const warmItems = day => (WARM[day] || []).map(x => typeof x === 'string' ? { name: x } : x);
+const warmFirstLift = () => A && A.items.find(x => x.group === 'Main');
+function warmLabel(w) {
+  if (!w.first) return w.name;
+  const f = warmFirstLift();
+  return f ? 'Light practice set: ' + f.name : w.name;
+}
+const warmListHTML = (cls = 'warmlist') => `<ul class="${cls}">${warmItems(A.day).map(w => `<li>${warmLabel(w)}</li>`).join('')}</ul>`;
+const wgLeft = () => wg.left != null ? wg.left : Math.max(0, (wg.end - Date.now()) / 1000);
+function wgStart() { wg = { i: 0, end: Date.now() + WARM_SECS * 1000 }; beep(660, 0.1); renderFocus(); window.scrollTo(0, 0); }
+function wgAdvance(auto) {
+  if (!wg || !A) return;
+  const n = warmItems(A.day).length;
+  if (wg.i + 1 >= n) { wg = null; A.warmup = true; saveSession(A); beep(880, 0.18); beep(1175, 0.25, 0.22); buzz([200, 100, 200]); }
+  else { wg = { i: wg.i + 1, end: Date.now() + WARM_SECS * 1000 }; if (auto) { beep(990, 0.14); buzz(150); } }
+  if (screen === 'workout' && wview === 'focus') { renderFocus(); window.scrollTo(0, 0); }
+}
+function wgPause() {
+  if (!wg) return;
+  if (wg.left == null) wg.left = wgLeft(); else { wg.end = Date.now() + wg.left * 1000; wg.left = null; }
+  renderFocus();
+}
+function tickWarm() {
+  if (!wg || wg.left != null || !A) return;
+  const left = wgLeft();
+  if (left <= 0) { wgAdvance(true); return; }
+  const num = $('#wgnum'), fill = $('#wgfill');
+  if (num) num.textContent = fmtClock(Math.ceil(left));
+  if (fill) fill.style.width = (100 * (1 - left / WARM_SECS)).toFixed(1) + '%';
+}
+function wgMediaHTML(w) {
+  let pid = w.photo && PHOTOS.has(w.photo) ? w.photo : null;
+  if (w.first) { const f = warmFirstLift(); pid = f ? photoFor(f.id) : null; }
+  if (pid) return `<div class="media"><img src="ex/${pid}-0.webp" alt="Start position"><img class="p1" src="ex/${pid}-1.webp" alt="End position"></div>`;
+  if (!w.video) return '';
+  return canEmbed()
+    ? `<div class="media short"><iframe src="https://www.youtube-nocookie.com/embed/${w.video}?rel=0&playsinline=1&autoplay=1&mute=1&loop=1&playlist=${w.video}&controls=0" title="${escapeHTML(w.name)}, short video" allow="autoplay; encrypted-media; picture-in-picture"></iframe></div>`
+    : `<a class="btn btn-soft btn-block" href="https://www.youtube.com/shorts/${w.video}" target="_blank" rel="noopener">▶ Watch the short video</a>`;
+}
+function wgHTML() {
+  const ws = warmItems(A.day), w = ws[wg.i], nx = ws[wg.i + 1], left = wgLeft();
+  return `<section class="focus wg">
+    <p class="small muted" style="margin:0">Move ${wg.i + 1} of ${ws.length}</p>
+    <h1>${warmLabel(w)}</h1>
+    ${wgMediaHTML(w)}
+    ${w.cue ? `<p class="muted" style="margin:0">${w.cue}</p>` : ''}
+    <div class="wgtime"><span class="bignum" id="wgnum" role="timer">${fmtClock(Math.ceil(left))}</span><div class="wgbar"><i id="wgfill" style="width:${(100 * (1 - left / WARM_SECS)).toFixed(1)}%"></i></div></div>
+    <p class="small muted" style="margin:0">${nx ? 'Next: ' + warmLabel(nx) : 'Last one, then your workout starts.'}</p>
+  </section>`;
+}
 function restBetween(it, nit) {
   if (it.group === 'Main' && nit.group === 'Main' && /^(\d)a$/.test(it.slot) && nit.slot === it.slot[0] + 'b') return 0;
+  if (it.rest) return it.rest; // set in plan.json, e.g. short rests between jump sets
   if (it.group === 'Core' && nit.group === 'Core') return nit.id === A.items.find(x => x.group === 'Core').id ? 30 : 15;
   if (it.group === 'Main' && nit.group === 'Main') return CYCLE_INFO[A.cycle].rest;
   return 60;
@@ -1932,7 +2042,7 @@ function tickHold() {
   if (el) el.textContent = holdText(st);
 }
 setInterval(() => {
-  tickRest(); tickHold();
+  tickRest(); tickHold(); tickWarm();
   if (screen === 'workout' && A) { const c = $('#clock'); if (c) c.textContent = fmtClock((Date.now() - A.startedAt) / 1000); }
 }, 250);
 
@@ -1942,7 +2052,7 @@ function finishWorkout() {
   hold = null; rest = null; $('#restbar').hidden = true;
   A.done = true; A.endedAt = Date.now();
   saveSession(A);
-  summaryOf = clone(A); A = null; keepAwake(false); openDemo = null;
+  summaryOf = clone(A); A = null; wg = null; keepAwake(false); openDemo = null;
   summaryOf.completedCycle = advanceIfWeekDone();
   autoBackup('workout'); syncSoon();
   screen = 'summary'; render(); window.scrollTo(0, 0);
@@ -2074,7 +2184,7 @@ function renderList() {
   <section class="card">
     <div class="row between"><h3>Warm-up, 5 min</h3>
       <button class="check" data-act="warm" aria-pressed="${A.warmup}" aria-label="Warm-up done" style="${A.warmup ? 'background:var(--good);border-color:var(--good)' : ''}">${CHECK_SVG.replace('<svg', `<svg style="stroke:${A.warmup ? 'var(--good-ink)' : 'var(--muted)'}"`)}</button></div>
-    <ul class="tips">${WARM[A.day].map(x => `<li>${x}</li>`).join('')}</ul>
+    ${warmListHTML('tips')}
   </section>
   ${groups.map(g => `<h3 style="margin-top:4px">${g === 'Main' ? 'Main work, in pairs' : GROUP_LABEL[g]}</h3>${A.items.filter(i => i.group === g).map(cardHTML).join('')}`).join('')}
   <button class="btn btn-primary big" data-act="finish">Finish workout</button>`;
@@ -2155,12 +2265,22 @@ function renderFocus() {
       : canEmbed()
         ? `<button class="btn btn-primary btn-block" style="min-height:56px" data-act="play-video" data-id="warmup">▶ Play the 5-min follow-along warm-up</button>`
         : `<a class="btn btn-primary btn-block" style="min-height:56px;text-decoration:none" href="https://www.youtube.com/watch?v=${wv}" target="_blank" rel="noopener">▶ Open the 5-min follow-along warm-up</a>`;
-    body = `<section class="focus">
+    const warmUl = warmListHTML();
+    if (ACTIVE.warmGuided && wg) body = wgHTML();
+    else if (ACTIVE.warmGuided) body = `<section class="focus">
+      <h1>Warm up first</h1><p class="muted">${warmItems(A.day).length} moves, 45 seconds each. The app moves on by itself, with a short video for each move.</p>
+      ${warmUl}
+      <details class="fold"><summary>Prefer a follow-along video?</summary><div class="in">${player}</div></details></section>`;
+    else body = `<section class="focus">
       <h1>Warm up first</h1><p class="muted">Follow along with Caroline Girvan's 5-minute full-body warm-up. It gets your joints ready and makes the workout safer.</p>
       ${player}
       ${ACTIVE.safety ? `<p class="prevnote"><b>Go easy:</b> skip or slow down any move that bothers your wrists or knee.</p>` : ''}
-      <details class="fold"><summary>No video? Do this instead</summary><div class="in"><p class="small muted">About 45 seconds each.</p><ul class="warmlist">${WARM[A.day].map(x => `<li>${x}</li>`).join('')}</ul></div></details></section>`;
-    dock = `<button class="btn btn-soft btn-block" data-act="warm-timer">Start a 5:00 timer</button><button class="btn btn-primary big" data-act="warm">I'm warmed up</button>`;
+      <details class="fold"><summary>No video? Do this instead</summary><div class="in"><p class="small muted">About 45 seconds each.</p>${warmUl}</div></details></section>`;
+    dock = ACTIVE.warmGuided && wg
+      ? `<div class="steppers"><button class="btn btn-soft" data-act="wg-pause">${wg.left != null ? 'Resume' : 'Pause'}</button><button class="btn btn-primary" data-act="wg-next">${wg.i + 1 >= warmItems(A.day).length ? 'Finish warm-up' : 'Next move'}</button></div>`
+      : ACTIVE.warmGuided
+        ? `<button class="btn btn-primary big" data-act="wg-start">Start the warm-up</button><button class="btn btn-ghost" data-act="warm">Skip, I'm already warm</button>`
+        : `<button class="btn btn-soft btn-block" data-act="warm-timer">Start a 5:00 timer</button><button class="btn btn-primary big" data-act="warm">I'm warmed up</button>`;
   } else if (rest && !rest.cue) {
     body = restViewHTML();
     dock = `<div class="steppers"><button class="btn btn-soft" data-act="rest-add">+15 s</button><button class="btn btn-primary" data-act="rest-skip">${rest.warm ? 'Done' : 'Skip rest'}</button></div>`;
@@ -2230,7 +2350,7 @@ function restViewHTML() {
     <h2>${rest.warm ? 'Warm-up' : 'Rest'}</h2>
     <div class="ringwrap"><svg class="ring" viewBox="0 0 58 58" aria-hidden="true"><circle class="bg" cx="29" cy="29" r="25"/><circle class="fg" id="ringfg" cx="29" cy="29" r="25" stroke-dasharray="${C}" stroke-dashoffset="${C * (1 - left / rest.total)}"/></svg>
       <span class="bignum" id="restnum" role="timer">${fmtClock(left)}</span></div>
-    ${rest.warm ? `<ul class="warmlist" style="text-align:left">${WARM[A.day].map(x => `<li>${x}</li>`).join('')}</ul>`
+    ${rest.warm ? warmListHTML('warmlist" style="text-align:left')
       : nit ? `<div class="nextcard"><span class="small muted">Get ready for</span><b style="font-size:18px">${nit.name}</b><span class="small muted">Set ${nx.i + 1}, ${nit.time ? nit.reps + ' s' : nit.reps + ' reps'}${nit.perSide ? ' each side' : ''}</span>${nit.tempo ? `<b class="small">Tempo: ${nit.tempo}</b>` : ''}</div>` : ''}
     ${rest.warm ? '' : justDoneNotesHTML()}
   </section>`;
@@ -2272,7 +2392,7 @@ function cancelSheet() {
 function cancelWorkout() {
   const sess = A || S.resumable; if (!sess) return;
   const sid = sess.id;
-  A = null; S.resumable = null; hold = null; rest = null; confirmDiscard = false; openDemo = null;
+  A = null; wg = null; S.resumable = null; hold = null; rest = null; confirmDiscard = false; openDemo = null;
   $('#restbar').hidden = true; keepAwake(false);
   closeSheet(); deleteSession(sid);
   screen = 'home'; tab = 'today'; render(); window.scrollTo(0, 0);
@@ -2379,14 +2499,41 @@ function setDay(key, type) {
 }
 const STATUS_LABEL = { lower: ACTIVE.days.lower.short, upper: ACTIVE.days.upper.short, both: 'Both', yoga: 'Yoga', tennis: 'Tennis', rest: 'Rest' };
 const STATUS_SHORT = lang() === 'de' ? { lower: 'U', upper: 'O', both: 'U+O', yoga: 'Y', tennis: 'T', rest: 'R' } : { lower: ACTIVE.days.lower.short[0], upper: ACTIVE.days.upper.short[0], both: 'Both', yoga: 'Y', tennis: 'T', rest: 'R' };
+/* cycle marks: the day a cycle's first workout happened, and the day of the last workout of a finished cycle */
+function cycleMarks() {
+  const m = {}, curR = S.state.round || 1, curC = S.state.cycle, groups = {};
+  for (const s of allSessions()) if (s.done) (groups[roundOf(s) + '-' + s.cycle] = groups[roundOf(s) + '-' + s.cycle] || []).push(s.startedAt);
+  for (const [k, ts] of Object.entries(groups)) {
+    const [r, c] = k.split('-').map(Number);
+    const add = (t, type) => { const key = dayKey(new Date(t)); (m[key] = m[key] || {})[type] = c; };
+    add(Math.min(...ts), 's');
+    if (r < curR || (r === curR && c < curC)) add(Math.max(...ts), 'e');
+  }
+  return m;
+}
+let MARKS = {};
+function cycleProgressHTML() {
+  const c = S.state.cycle, w = S.state.week, round = S.state.round || 1, per = ACTIVE.perWeek, info = CYCLE_INFO[c] || { name: '' };
+  const weeks = [1, 2, 3, 4].map(k => Math.min(per, doneIn(c, k).length));
+  const done = weeks.reduce((a, b) => a + b, 0), total = 4 * per, left = total - done;
+  const eta = new Date(); eta.setDate(eta.getDate() + Math.ceil(left / per * 7));
+  return `<section class="card">
+    <div class="row between" style="align-items:baseline"><h3>${round > 1 ? `Cycle ${c} (round ${round}): ${info.name}` : `Cycle ${c}: ${info.name}`}</h3><span class="small muted">${done} of ${total} workouts</span></div>
+    <div class="cycbar" role="progressbar" aria-valuemin="0" aria-valuemax="${total}" aria-valuenow="${done}" aria-valuetext="${done} of ${total} workouts">${weeks.map((n, i) => `<div class="sg${i + 1 === w ? ' cur' : ''}"><i style="width:${(100 * n / per).toFixed(0)}%"></i></div>`).join('')}</div>
+    <div class="cyclabels">${[1, 2, 3, 4].map(k => `<span class="${k === w ? 'cur' : ''}">${k === 4 ? 'Light week' : 'Week ' + k}</span>`).join('')}</div>
+    ${left ? `<p class="small muted">${left} to go. At ${per} a week, you'd finish around ${eta.toLocaleDateString(LOC(), { weekday: 'short', day: 'numeric', month: 'short' })}.</p>` : ''}
+  </section>`;
+}
 function weekStart(offset = 0) { const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - ((d.getDay() + 6) % 7) + offset * 7); return d; }
 function dayCell(date, big) {
   const key = dayKey(date), st = dayStatus(key);
   const isToday = key === todayKey(), future = date > new Date() && !isToday;
   const label = st ? STATUS_LABEL[st] : future ? '' : isToday ? 'Today' : '';
   const name = date.toLocaleDateString(LOC(), { weekday: 'long', day: 'numeric', month: 'long' });
-  return `<button class="dc ${st || ''} ${isToday ? 'today' : ''} ${future ? 'future' : ''}" ${future || isWorkout(st) ? 'disabled' : `data-act="day-edit" data-v="${key}"`} aria-label="${name}: ${st ? STATUS_LABEL[st] : future ? 'upcoming' : 'nothing logged'}">
-    <span class="dn">${date.getDate()}</span>${st ? `<span class="dl">${big ? STATUS_LABEL[st] : STATUS_SHORT[st]}</span>` : ''}</button>`;
+  const mk = MARKS[key] || {};
+  const mkText = (mk.s ? `, cycle ${mk.s} starts` : '') + (mk.e ? `, cycle ${mk.e} done` : '');
+  return `<button class="dc ${st || ''} ${isToday ? 'today' : ''} ${future ? 'future' : ''}" ${future || isWorkout(st) ? 'disabled' : `data-act="day-edit" data-v="${key}"`} aria-label="${name}: ${st ? STATUS_LABEL[st] : future ? 'upcoming' : 'nothing logged'}${mkText}">
+    ${mk.s || mk.e ? `<span class="cms" aria-hidden="true">${mk.e ? `<span class="cm">C${mk.e}✓</span>` : ''}${mk.s ? `<span class="cm">C${mk.s}▸</span>` : ''}</span>` : ''}<span class="dn">${date.getDate()}</span>${st ? `<span class="dl">${big ? STATUS_LABEL[st] : STATUS_SHORT[st]}</span>` : ''}</button>`;
 }
 function weekStripHTML(offset = 0) {
   const s0 = weekStart(offset);
@@ -2400,7 +2547,8 @@ function monthGridHTML(offset = 0) {
   let cells = '';
   for (let i = 0; i < lead; i++) cells += '<span class="blank"></span>';
   for (let d = 1; d <= n; d++) cells += dayCell(new Date(first.getFullYear(), first.getMonth(), d), false);
-  return `<div class="cal month">${heads.map(h => `<div class="wd">${h}</div>`).join('')}${cells}</div>`;
+  const marked = Object.keys(MARKS).some(k => k.slice(0, 7) === dayKey(first).slice(0, 7));
+  return `<div class="cal month${marked ? ' marked' : ''}">${heads.map(h => `<div class="wd">${h}</div>`).join('')}${cells}</div>`;
 }
 function periodCounts(from, to) {
   const c = { lower: 0, upper: 0, yoga: 0, tennis: 0, rest: 0 };
@@ -2413,6 +2561,7 @@ function periodCounts(from, to) {
 let calMode = 'week', calOffset = 0;
 function calendarCardHTML() {
   let title, from, to;
+  MARKS = cycleMarks();
   if (calMode === 'week') {
     from = weekStart(calOffset); to = new Date(from.getFullYear(), from.getMonth(), from.getDate() + 6);
     title = calOffset === 0 ? 'This week' : calOffset === -1 ? 'Last week' : `${from.toLocaleDateString(LOC(), { day: 'numeric', month: 'short' })} to ${to.toLocaleDateString(LOC(), { day: 'numeric', month: 'short' })}`;
@@ -2428,9 +2577,8 @@ function calendarCardHTML() {
       <div style="text-align:center"><h3>${title}</h3><p class="small muted">${summary}</p></div>
       <button class="iconbtn" data-act="cal-next" aria-label="Next ${calMode}" ${calOffset >= 0 ? 'disabled style="opacity:.35"' : ''}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button></div>
     ${calMode === 'week' ? weekStripHTML(calOffset) : monthGridHTML(calOffset)}
-    <div class="legend"><span><i class="lower"></i>${DAY_LABEL.lower}</span><span><i class="upper"></i>${DAY_LABEL.upper}</span><span><i class="${ACTIVE.alt.key}"></i>${ACTIVE.alt.label}</span><span><i class="rest"></i>Rest</span></div>
     <p class="small muted">Tap an earlier day to mark it as ${ACTIVE.alt.label.toLowerCase()} or rest.</p>
-    <p class="small muted">Plan: cycle ${S.state.cycle}, week ${S.state.week}. ${doneIn(S.state.cycle, S.state.week).length} of ${ACTIVE.perWeek} workouts done. Missed a day? The next workout simply waits for you.</p>
+    <p class="small muted">Missed a day? The next workout simply waits for you.</p>
   </section>`;
 }
 function dayEditSheet(key) {
@@ -2644,7 +2792,7 @@ function spark(points) {
 function renderHistory() {
   const done = allSessions().filter(s => s.done);
   if (!done.length) {
-    view.innerHTML = `<section class="greet"><h1>History</h1></section>${calendarCardHTML()}<div class="card empty">Finished workouts show up here, with your weights and reps.<br>Start your first one from Today.</div>`;
+    view.innerHTML = `<section class="greet"><h1>History</h1></section>${cycleProgressHTML()}${calendarCardHTML()}<div class="card empty">Finished workouts show up here, with your weights and reps.<br>Start your first one from Today.</div>`;
     return;
   }
   const since = mondayStart();
@@ -2658,6 +2806,7 @@ function renderHistory() {
   const prog = Object.values(series);
   view.innerHTML = `
   <section class="greet"><h1>History</h1><p class="muted">${done.length} workout${done.length === 1 ? '' : 's'} so far, ${done.filter(s => s.startedAt >= since).length} this week</p></section>
+  ${cycleProgressHTML()}
   ${calendarCardHTML()}
   ${reviewsList().length ? `<section class="card"><h3>Cycle reviews</h3><div class="row" style="flex-wrap:wrap;gap:8px">${reviewsList().map(v => `<button class="btn btn-soft" data-act="review" data-v="${v.cycle}" data-r="${v.round}">Cycle ${v.cycle}${v.round > 1 ? ' (round ' + v.round + ')' : ''}</button>`).join('')}</div></section>` : ''}
   ${prog.length ? `<section class="card"><h3>Weight progress</h3><ul class="prog">${prog.map(p => `<li><span class="nm">${p.name}</span>${spark(p.pts.slice(-12))}<span class="kg">${p.pts[p.pts.length - 1]} kg</span></li>`).join('')}</ul></section>` : ''}
@@ -2758,7 +2907,7 @@ document.addEventListener('click', e => {
     case 'discard': confirmDiscard = true; render(); break;
     case 'discard-no': confirmDiscard = false; render(); break;
     case 'discard-yes': { const sid = S.resumable.id; S.resumable = null; confirmDiscard = false; deleteSession(sid); render(); break; }
-    case 'discard-active': { const sid = A.id; A = null; confirmDiscard = false; screen = 'home'; keepAwake(false); stopRest(); deleteSession(sid); render(); break; }
+    case 'discard-active': { const sid = A.id; A = null; wg = null; confirmDiscard = false; screen = 'home'; keepAwake(false); stopRest(); deleteSession(sid); render(); break; }
     case 'leave': {
       closeSheet(); clearTimeout(saveTimer); hold = null; rest = null; $('#restbar').hidden = true;
       if (!setsDone(A)[0] && !(A.notes && Object.keys(A.notes).length)) { const sid = A.id; A = null; deleteSession(sid); toast('Nothing was logged, so the workout was removed.'); }
@@ -2800,7 +2949,10 @@ document.addEventListener('click', e => {
       n.tags = n.tags.includes(v) ? n.tags.filter(t => t !== v) : [...n.tags, v];
       b.setAttribute('aria-pressed', n.tags.includes(v)); saveActiveSoon(); noteSaved(id); break;
     }
-    case 'warm': A.warmup = wview === 'focus' ? true : !A.warmup; rest = null; saveSession(A); renderWorkout(); window.scrollTo(0, 0); break;
+    case 'wg-start': wgStart(); break;
+    case 'wg-next': wgAdvance(false); break;
+    case 'wg-pause': wgPause(); break;
+    case 'warm': wg = null; A.warmup = wview === 'focus' ? true : !A.warmup; rest = null; saveSession(A); renderWorkout(); window.scrollTo(0, 0); break;
     case 'w-': case 'w+': case 'r-': case 'r+': {
       const s = A.log[id][i], f = act[0], step = f === 'w' ? 1 : 1;
       const cur = parseFloat(s[f]) || 0;
