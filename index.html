@@ -637,7 +637,7 @@ const PLANS = {
       lower: ['Jumping jacks', '90/90 hip switches: sit with both knees bent to one side, swing them to the other side', 'Side-to-side lunge shifts, no weight', 'Lateral band walks, short band above the knees', 'Glute bridges', 'A light practice set of your first lift'],
     },
     version: { date: '2026-10-02', note: 'Some core and small exercises now change from one workout to the next' },
-    coachDesc: 'trains at home in 30–40 minute lunch breaks with dumbbells and bodyweight, 4 days a week (upper/lower), and practises handstands, pull-ups and kegels. Goal: general health, fitness and a better shape.',
+    coachDesc: 'trains at home in 30–40 minute lunch breaks with dumbbells, bands, yoga blocks, a big exercise ball and bodyweight, 4 days a week (upper/lower), and practises handstands, pull-ups and kegels. Goal: general health, fitness and a better shape.',
     safety: '',
   },
   tennis: {
@@ -679,7 +679,7 @@ const PLAN_FILE_LS = 'lunchtime-lifts-planfile-' + PLAN_KEY;
 function planFromJSON(j) {
   try {
     if (!j || j.format !== 1 || j.plan !== PLAN_KEY || !(j.rev > 0) || !j.days || !j.cycles) return null;
-    const extras = { photo: {}, video: {}, note: {}, de: {} };
+    const extras = { photo: {}, video: {}, short: {}, note: {}, de: {} };
     const okWeeks = w => Array.isArray(w) && w.length === 4 && w.every(r => Array.isArray(r) && r[0] >= 1 && r[1] >= 1 && (r[2] === undefined || typeof r[2] === 'string'));
     const item = (e, base) => {
       if (!e || typeof e.name !== 'string' || !e.name || !okWeeks(e.weeks)) throw new Error('bad exercise');
@@ -690,7 +690,7 @@ function planFromJSON(j) {
       if (typeof e.tempo === 'string') o.tempo = e.tempo;
       if (e.rest > 0) o.rest = e.rest;
       if (e.photo) extras.photo[id] = e.photo;
-      if (e.video) extras.video[id] = e.video;
+      if (e.video) { extras.video[id] = e.video; if (e.short) extras.short[id] = true; }
       if (e.photoNote) extras.note[id] = e.photoNote;
       if (e.nameDe) extras.de[e.name] = e.nameDe;
       if (e.cueDe && e.cue) extras.de[e.cue] = e.cueDe;
@@ -718,7 +718,7 @@ function planFromJSON(j) {
       warm = {};
       for (const d of ['lower', 'upper']) warm[d] = j.warm[d].map(w => {
         const o = { name: w.name, cue: typeof w.cue === 'string' ? w.cue : '' };
-        if (typeof w.video === 'string' && /^[\w-]{11}$/.test(w.video)) o.video = w.video;
+        if (typeof w.video === 'string' && /^[\w-]{11}$/.test(w.video)) { o.video = w.video; if (w.short) o.short = true; }
         if (typeof w.photo === 'string') o.photo = w.photo;
         if (w.first) o.first = true;
         if (w.nameDe) extras.de[w.name] = w.nameDe;
@@ -988,7 +988,9 @@ const PHOTO_NOTE = {
   'tuck-up': 'The photo uses a bench. Do yours sitting on the floor.',
   'v-up': 'Bend your knees a little if straight legs are too hard.',
 };
-function photoFor(id) { const p = PHOTO_ALIAS[id] || id; return PHOTOS.has(p) ? p : null; }
+// a video chosen in plan.json wins over the photo; SHORT_VIDEO = vertical clips (YouTube Shorts), shown in a tall frame
+const PLAN_VIDEO = new Set(), SHORT_VIDEO = new Set();
+function photoFor(id) { if (PLAN_VIDEO.has(id)) return null; const p = PHOTO_ALIAS[id] || id; return PHOTOS.has(p) ? p : null; }
 function howHTML(it) {
   const pid = photoFor(it.id);
   const visual = pid
@@ -1278,7 +1280,7 @@ DE_RX.push(
   [/^(\d+) of (\d+) workouts$/, '$1 von $2 Trainings'],
   [/^Week (\d)$/, 'Woche $1'],
   [/^(\d+) to go\. At (\d+) a week, you'd finish around (.+)\.$/, 'Noch $1. Bei $2 pro Woche bist du etwa am $3 fertig.'],
-  [/^(\d+) moves, 45 seconds each\. The app moves on by itself, with a short video for each move\.$/, '$1 Bewegungen, je 45 Sekunden. Die App macht von allein weiter, mit einem kurzen Video zu jeder Bewegung.'],
+  [/^(\d+) moves, 45 seconds each\. The app moves on by itself\.$/, '$1 Bewegungen, je 45 Sekunden. Die App macht von allein weiter.'],
   [/^Light practice set: (.+)$/, (m, n) => 'Leichter Übungssatz: ' + tr(n)],
   [/^Core, round (\d+) of (\d+)$/, 'Rumpf, Runde $1 von $2'],
   [/^Pair (\d+), exercise ([ab])$/, 'Paar $1, Übung $2'],
@@ -1412,6 +1414,8 @@ function applyPlanExtras(x) {
   if (!x) return;
   for (const [id, p] of Object.entries(x.photo)) if (PHOTOS.has(p)) PHOTO_ALIAS[id] = p;
   Object.assign(VIDEO, x.video); Object.assign(PHOTO_NOTE, x.note); Object.assign(DE, x.de);
+  for (const id of Object.keys(x.video)) PLAN_VIDEO.add(id);
+  for (const id of Object.keys(x.short || {})) SHORT_VIDEO.add(id);
 }
 applyPlanExtras(PLAN_START && PLAN_START.extras);
 const S = { ready: false, mode: 'loading', state: { cycle: 1, week: 1, kegels: {} }, sessions: [] };
@@ -1901,8 +1905,8 @@ function wgMediaHTML(w) {
   if (pid) return `<div class="media"><img src="ex/${pid}-0.webp" alt="Start position"><img class="p1" src="ex/${pid}-1.webp" alt="End position"></div>`;
   if (!w.video) return '';
   return canEmbed()
-    ? `<div class="media short"><iframe src="https://www.youtube-nocookie.com/embed/${w.video}?rel=0&playsinline=1&autoplay=1&mute=1&loop=1&playlist=${w.video}&controls=0" title="${escapeHTML(w.name)}, short video" allow="autoplay; encrypted-media; picture-in-picture"></iframe></div>`
-    : `<a class="btn btn-soft btn-block" href="https://www.youtube.com/shorts/${w.video}" target="_blank" rel="noopener">▶ Watch the short video</a>`;
+    ? `<div class="media video${w.short ? ' short' : ''}"><iframe src="https://www.youtube-nocookie.com/embed/${w.video}?rel=0&playsinline=1&autoplay=1&mute=1&loop=1&playlist=${w.video}&controls=0" title="${escapeHTML(w.name)}, short video" allow="autoplay; encrypted-media; picture-in-picture"></iframe></div>`
+    : `<a class="btn btn-soft btn-block" href="https://www.youtube.com/${w.short ? 'shorts/' : 'watch?v='}${w.video}" target="_blank" rel="noopener">▶ Watch the short video</a>`;
 }
 function wgHTML() {
   const ws = warmItems(A.day), w = ws[wg.i], nx = ws[wg.i + 1], left = wgLeft();
@@ -2268,7 +2272,7 @@ function renderFocus() {
     const warmUl = warmListHTML();
     if (ACTIVE.warmGuided && wg) body = wgHTML();
     else if (ACTIVE.warmGuided) body = `<section class="focus">
-      <h1>Warm up first</h1><p class="muted">${warmItems(A.day).length} moves, 45 seconds each. The app moves on by itself, with a short video for each move.</p>
+      <h1>Warm up first</h1><p class="muted">${warmItems(A.day).length} moves, 45 seconds each. The app moves on by itself.</p>
       ${warmUl}
       <details class="fold"><summary>Prefer a follow-along video?</summary><div class="in">${player}</div></details></section>`;
     else body = `<section class="focus">
@@ -2300,8 +2304,8 @@ function renderFocus() {
     const vq = encodeURIComponent(it.name + ' exercise proper form');
     const visual = pid
       ? `<div class="media"><img src="ex/${pid}-0.webp" alt="${it.name}, start position"><img class="p1" src="ex/${pid}-1.webp" alt="${it.name}, end position"></div>${PHOTO_NOTE[it.id] ? `<p class="small muted" style="margin-top:-8px">${PHOTO_NOTE[it.id]}</p>` : ''}`
-      : VIDEO[it.id] && playingVideo === it.id
-        ? `<div class="media video"><iframe src="https://www.youtube-nocookie.com/embed/${VIDEO[it.id]}?rel=0&playsinline=1&autoplay=1&mute=1" title="${it.name} tutorial video" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe></div><div class="row between" style="margin-top:-6px"><button class="btn btn-ghost" style="padding:0" data-act="stop-video">Show the drawing</button><a class="btn btn-ghost" style="padding:0" href="https://www.youtube.com/watch?v=${VIDEO[it.id]}" target="_blank" rel="noopener">Open in YouTube</a></div>`
+      : VIDEO[it.id] && (playingVideo === it.id || (PLAN_VIDEO.has(it.id) && canEmbed()))
+        ? `<div class="media video${SHORT_VIDEO.has(it.id) ? ' short' : ''}"><iframe src="https://www.youtube-nocookie.com/embed/${VIDEO[it.id]}?rel=0&playsinline=1&autoplay=1&mute=1${PLAN_VIDEO.has(it.id) ? `&loop=1&playlist=${VIDEO[it.id]}` : ''}" title="${it.name} tutorial video" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe></div><div class="row between" style="margin-top:-6px">${PLAN_VIDEO.has(it.id) ? '<span></span>' : `<button class="btn btn-ghost" style="padding:0" data-act="stop-video">Show the drawing</button>`}<a class="btn btn-ghost" style="padding:0" href="https://www.youtube.com/watch?v=${VIDEO[it.id]}" target="_blank" rel="noopener">Open in YouTube</a></div>`
         : `<div class="media">${figSVG(it) || '<p class="muted" style="position:absolute;inset:0;display:grid;place-items:center;margin:0">No photo for this one yet</p>'}${VIDEO[it.id]
             ? (canEmbed() ? `<button class="vidbtn" data-act="play-video" data-id="${it.id}">▶ Play video</button>` : `<a class="vidbtn" href="https://www.youtube.com/watch?v=${VIDEO[it.id]}" target="_blank" rel="noopener">▶ Watch the video</a>`)
             : `<a class="vidbtn" href="https://www.youtube.com/results?search_query=${vq}" target="_blank" rel="noopener">▶ Find a video</a>`}</div><p class="small muted" style="margin-top:-8px">${figFor(it.id) ? 'Drawing of the movement. Tap the button for a real video tutorial.' : 'Tap the button for a video tutorial.'}</p>`;
