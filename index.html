@@ -1103,7 +1103,7 @@ Object.assign(DE, {
   'Set done': 'Satz erledigt', 'Log it without the timer': 'Ohne Timer eintragen', 'Reps done': 'Wiederholungen', 'reps': 'Wdh.', 'reps each side': 'Wdh. pro Seite',
   'Less weight': 'Weniger Gewicht', 'More weight': 'Mehr Gewicht', 'Fewer reps': 'Weniger Wiederholungen', 'More reps': 'Mehr Wiederholungen', 'Weight in kg': 'Gewicht in kg',
   'Last time': 'Letztes Mal', 'Form tips': 'Technik-Tipps', 'Watch video demos (YouTube)': 'Videos ansehen (YouTube)', 'Add a note about this exercise': 'Notiz zu dieser Übung',
-  'Your note (saved)': 'Deine Notiz (gespeichert)', '1 dumbbell': '1 Hantel', '2 dumbbells': '2 Hanteln', 'Dumbbells': 'Hanteln', 'Rest over': 'Pause vorbei', 'Lower over 3 s': 'In 3 s absenken', 'Next exercise': 'Nächste Übung', 'How did it feel? Your notes go into the Excel export and help plan the next cycle.': 'Wie hat es sich angefühlt? Deine Notizen landen im Excel-Export und helfen beim nächsten Zyklus.',
+  'Your note (saved)': 'Deine Notiz (gespeichert)', '1 dumbbell': '1 Hantel', '2 dumbbells': '2 Hanteln', 'Dumbbells': 'Hanteln', 'Rest over': 'Pause vorbei', 'Lower over 3 s': 'In 3 s absenken', 'Next exercise': 'Nächste Übung', 'Undo: I didn\'t do that set': 'Rückgängig: Satz nicht gemacht', 'Undo': 'Rückgängig', 'Set undone. Do it when you\'re ready.': 'Satz zurückgenommen. Mach ihn, wenn du so weit bist.', 'How did it feel? Your notes go into the Excel export and help plan the next cycle.': 'Wie hat es sich angefühlt? Deine Notizen landen im Excel-Export und helfen beim nächsten Zyklus.',
   'Too easy': 'Zu leicht', 'Too hard': 'Zu schwer', 'Pain or discomfort': 'Schmerzen oder Beschwerden', 'Form felt off': 'Technik fühlte sich falsch an', 'Missing equipment': 'Ausrüstung fehlt', 'Loved it': 'Super',
   'E.g. left wrist felt sore, could go heavier next time': 'Z. B. linkes Handgelenk tat weh, nächstes Mal schwerer', 'Saved': 'Gespeichert',
   'Drawing of the movement. Tap the button for a real video tutorial.': 'Zeichnung der Bewegung. Tipp auf den Button für ein echtes Video.', 'No photo for this one yet': 'Für diese Übung gibt es noch kein Foto', 'Your plan was updated.': 'Dein Plan wurde aktualisiert.', 'Tap the button for a video tutorial.': 'Tipp auf den Button für ein Video.',
@@ -1932,7 +1932,7 @@ function afterSetDone(it, i) {
   const nit = itemOf(next.id);
   const secs = restBetween(it, nit);
   if (!secs) {
-    if (wview === 'focus') { flash = 'No rest in a pair. Straight into it.'; renderFocus(); window.scrollTo(0, 0); }
+    if (wview === 'focus') { flash = 'No rest in a pair. Straight into it.'; flashUndo = true; renderFocus(); window.scrollTo(0, 0); }
     else {
       showCue('Now ' + nit.slot + ': ' + nit.name);
       setTimeout(() => { const c = $('#card-' + nit.id); if (c) c.scrollIntoView({ behavior: REDUCED.matches ? 'auto' : 'smooth', block: 'start' }); }, 350);
@@ -1943,7 +1943,7 @@ function afterSetDone(it, i) {
 }
 
 /* rest timer */
-let rest = null;
+let rest = null, flashUndo = false;
 function startRest(secs, label, warm = false) {
   rest = { end: Date.now() + secs * 1000, total: secs, label, go: false, warm };
   if (wview === 'focus') { renderFocus(); window.scrollTo(0, 0); } else drawRest();
@@ -1974,6 +1974,7 @@ function showCue(label) {
   rest = { cue: true, label }; drawRest();
   clearTimeout(showCue._t); showCue._t = setTimeout(() => { if (rest && rest.cue) stopRest(); }, 3500);
 }
+const typingNote = () => { const a = document.activeElement; return !!(a && a.matches && a.matches('textarea[data-note]')); };
 function tickRest() {
   if (!rest || rest.cue || rest.go) return;
   const left = (rest.end - Date.now()) / 1000;
@@ -1982,7 +1983,7 @@ function tickRest() {
   if (left <= 0) {
     beep(880, 0.18); beep(1175, 0.25, 0.22); buzz([200, 100, 200]);
     if (wview === 'focus') {
-      if (document.querySelector('.restview details[data-fold="notes"][open]')) {
+      if (typingNote()) { // mid-sentence in a note: wait until she taps out of the box, then move on
         rest.go = true;
         if (num) num.textContent = fmtClock(0);
         if (fg) fg.setAttribute('stroke-dashoffset', String(C));
@@ -2322,7 +2323,7 @@ function renderFocus() {
     }
     const ln = lastNoteFor(it.id, A.id);
     const running = hold && hold.id === it.id && hold.i === i;
-    body = `${flash ? `<div class="flash" role="status">${flash}</div>` : ''}
+    body = `${flash ? `<div class="flash" role="status">${flash}${flashUndo ? ` <button class="btn btn-ghost" style="padding:0;min-height:0" data-act="prev">Undo</button>` : ''}</div>` : ''}
     <section class="focus" id="card-${it.id}">
       <div class="ctx"><span class="where">${stepContext(it, i)}</span>${setDotsHTML(it, i)}</div>
       <h1>${it.name}</h1>
@@ -2339,7 +2340,7 @@ function renderFocus() {
          <button class="btn btn-ghost" data-act="check" data-id="${it.id}" data-i="${i}">Log it without the timer</button>`
       : `${it.weighted ? dbPickHTML(it, i, false) : ''}<div class="steppers ${it.weighted ? '' : 'one'}">${it.weighted ? stepperHTML(it, i, 'w') : ''}${stepperHTML(it, i, 'r')}</div>
          <button class="btn btn-primary big" data-act="check" data-id="${it.id}" data-i="${i}">Set done</button>`;
-    flash = '';
+    flash = ''; flashUndo = false;
   }
   view.innerHTML = wheadHTML() + body;
   setDock(dock, false);
@@ -2357,6 +2358,7 @@ function restViewHTML() {
     ${rest.warm ? warmListHTML('warmlist" style="text-align:left')
       : nit ? `<div class="nextcard"><span class="small muted">Get ready for</span><b style="font-size:18px">${nit.name}</b><span class="small muted">Set ${nx.i + 1}, ${nit.time ? nit.reps + ' s' : nit.reps + ' reps'}${nit.perSide ? ' each side' : ''}</span>${nit.tempo ? `<b class="small">Tempo: ${nit.tempo}</b>` : ''}</div>` : ''}
     ${rest.warm ? '' : justDoneNotesHTML()}
+    ${rest.warm ? '' : `<button class="btn btn-ghost" data-act="prev">Undo: I didn't do that set</button>`}
   </section>`;
 }
 function refreshCard(id) {
@@ -2897,7 +2899,7 @@ document.addEventListener('click', e => {
     case 'prev': closeSheet(); {
       const steps = stepsOf(A), cur = currentStep(), idx = cur ? steps.findIndex(x => x.id === cur.id && x.i === cur.i) : steps.length;
       const back = steps.slice(0, idx).reverse().find(x => !isOpen(A.log[x.id][x.i]));
-      if (back) { const x = A.log[back.id][back.i]; x.done = false; x.skipped = false; hold = null; rest = null; saveSession(A); renderWorkout(); }
+      if (back) { const x = A.log[back.id][back.i]; x.done = false; x.skipped = false; hold = null; rest = null; $('#restbar').hidden = true; saveSession(A); renderWorkout(); window.scrollTo(0, 0); toast('Set undone. Do it when you\'re ready.'); }
       else if (A.warmup) { A.warmup = false; rest = null; saveSession(A); renderWorkout(); }
       break;
     }
@@ -3010,6 +3012,9 @@ document.addEventListener('input', e => {
     S.state.profile = { ...profile(), [t.id === 'set-name' ? 'name' : 'about']: t.value.slice(0, t.id === 'set-name' ? 40 : 400) };
     clearTimeout(profTimer); profTimer = setTimeout(() => { saveState(); const el = $('#set-saved'); if (el) { el.textContent = 'Saved'; setTimeout(() => { el.textContent = ''; }, 1500); } }, 600); return;
   }
+});
+document.addEventListener('focusout', e => {
+  if (e.target.matches && e.target.matches('textarea[data-note]') && rest && rest.go && !rest.warm && wview === 'focus') setTimeout(() => { if (rest && rest.go && !typingNote()) stopRest(); }, 250);
 });
 document.addEventListener('toggle', e => { const d = e.target; if (d.dataset && d.dataset.fold === 'notes') openNotes = d.open ? d.dataset.id : null; }, true);
 $('#scrim').addEventListener('click', e => { if (e.target.id === 'scrim') closeSheet(); });
