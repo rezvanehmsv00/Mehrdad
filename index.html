@@ -183,6 +183,9 @@ h3 { font-size: 18px; line-height: 1.2; letter-spacing: -0.01em; }
 .vidbtn { position: absolute; right: 10px; top: 10px; min-height: 44px; padding: 0 14px; border-radius: 999px; background: var(--ink); color: var(--bg); font-weight: 700; font-size: 14px; display: inline-flex; align-items: center; text-decoration: none; }
 .media .p1 { animation: flip 3s ease-in-out infinite; }
 .media .fig { position: absolute; inset: 0; width: 100%; height: 100%; }
+.media.draw img { top: 46px; right: 6%; bottom: 10px; left: 6%; width: 88%; height: calc(100% - 56px); background: none; filter: invert(1); opacity: .82; }
+:root[data-theme="dark"] .media.draw img { filter: none; opacity: .9; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .media.draw img { filter: none; opacity: .9; } }
 @keyframes flip { 0%, 38% { opacity: 0; } 50%, 88% { opacity: 1; } 100% { opacity: 0; } }
 .cue { font-size: 16px; }
 .lastline { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 15px; }
@@ -988,12 +991,73 @@ const PHOTO_NOTE = {
   'tuck-up': 'The photo uses a bench. Do yours sitting on the floor.',
   'v-up': 'Bend your knees a little if straight legs are too hard.',
 };
+/* Drawings from Workout Guide by Bryl Lim, based on Everkinetic (github.com/bryllim/workout-guide, CC BY-SA 4.0), cropped and saved as WebP in ex/d/.
+   They are the default picture for every exercise that has one; photos, videos and the stick figures only fill the gaps. */
+const DRAW = {
+  'goblet-squat': 'goblet-squat-1', 'pause-goblet-squat': 'goblet-squat-1', 'goblet-squat-3-s-lowering': 'goblet-squat-1', 'box-squat-to-chair': 'goblet-squat-1',
+  'romanian-deadlift': 'dumbbell-romanian-deadlift-1', 'single-leg-rdl': 'single-leg-romanian-deadlift-1',
+  'reverse-lunge': 'reverse-lunge-1', 'deficit-reverse-lunge': 'deficit-reverse-lunge-1', 'bulgarian-split-squat': 'bulgarian-split-squat-1', 'split-squat': 'split-squat-1',
+  'cossack-squat': 'cossack-squat-1', 'lateral-lunge': 'lateral-lunge-1', 'side-to-side-lunge-shifts': 'lateral-lunge-1', 'low-step-up': 'step-up-1',
+  'single-leg-calf-raise': 'single-leg-calf-raise-1', 'standing-calf-raise': 'calf-raise-1',
+  'glute-bridge': 'glute-bridge-2', 'glute-bridges': 'glute-bridge-2', 'single-leg-hip-thrust': 'single-leg-glute-bridge-1',
+  'hip-thrust': 'dumbbell-hip-thrust-1', 'hip-thrust-3-s-hold': 'dumbbell-hip-thrust-1',
+  'lateral-band-walk': 'banded-lateral-walk-1', 'lateral-band-walks': 'banded-lateral-walk-1',
+  'dead-bug': 'dead-bug-1', 'dead-bug-with-dumbbell': 'dead-bug-1',
+  'side-plank': 'side-plank-1', 'side-plank-knees': 'side-plank-1', 'side-plank-reach-through': 'side-plank-1', 'side-plank-with-leg-lift': 'side-plank-1', 'side-plank-hip-dips': 'side-plank-hip-dip-1',
+  'copenhagen-plank-foot-on-sofa': 'copenhagen-plank-1', 'copenhagen-plank-knee-on-sofa': 'copenhagen-plank-1',
+  'forearm-plank': 'plank-1', 'forearm-plank-with-leg-lift': 'plank-1', 'long-lever-plank': 'plank-1', 'plank-body-saw': 'plank-1',
+  'reverse-crunch': 'reverse-crunch-2', 'lying-leg-raise': 'lying-leg-raise-2', 'bent-knee-leg-raise': 'lying-leg-raise-2',
+  'hollow-hold': 'hollow-body-hold-1', 'tuck-hollow-hold': 'hollow-body-hold-3', 'hollow-body-rocks': 'hollow-rock-2', 'v-up': 'v-up-2',
+  'push-up': 'push-up-1', 'pause-push-up': 'push-up-1', 'tempo-push-up': 'push-up-1', 'push-up-on-dumbbells': 'push-up-1', 'push-up-on-dumbbells-3-s-lowering': 'push-up-1',
+  'incline-push-up': 'incline-push-up-3', 'pike-push-up': 'pike-push-up-2', 'pike-push-up-3-s-lowering': 'pike-push-up-2', 'elevated-pike-push-up': 'feet-elevated-pike-push-up-1',
+  'single-arm-row': 'one-arm-dumbbell-row-1', 'bent-over-row': 'dumbbell-bent-over-row-1',
+  'shoulder-press': 'standing-dumbbell-press-3', 'neutral-grip-shoulder-press': 'standing-dumbbell-press-3', 'single-arm-shoulder-press': 'standing-dumbbell-press-3',
+  'rear-delt-fly': 'rear-delt-fly-1', 'band-pull-apart': 'band-pull-apart-1', 'band-pull-aparts': 'band-pull-apart-1', 'band-face-pull': 'banded-face-pull-1',
+  'standing-woodchop': 'banded-woodchop-1', 'pallof-press': 'banded-pallof-press-1', 'suitcase-carry': 'farmer-carry-1', 'suitcase-hold': 'farmer-carry-1',
+  'bird-dog': 'bird-dog-1', 'plank-shoulder-taps': 'plank-shoulder-tap-1',
+  'wall-walk-up-hold': 'wall-walk-1', 'wall-walk': 'wall-walk-2', 'chest-to-wall-handstand': 'wall-walk-3', 'wall-shoulder-taps': 'wall-walk-3',
+  'dead-hang': 'dead-hang-1', 'pull-up': 'pull-up-1', 'pull-up-negative': 'negative-pull-up-3',
+  'bear-crawl': 'bear-crawl-1', 'bear-hold': 'bear-plank-2', 'heel-taps': 'heel-tap-1', 'plank-walk-out': 'inchworm-1', 'plank-to-pike': 'inchworm-2',
+  'slow-mountain-climbers': 'mountain-climber-1', 'superman': 'superman-hold-1', 'superman-hold': 'superman-hold-1',
+  'lying-y-t-raise': 'prone-y-raise-1', 'y-t-w-raise': 'prone-y-raise-1',
+  'skater-hop': 'skater-hop-1', 'squat-jump': 'jump-squat-1', 'jumping-jacks': 'jumping-jack-1', 'arm-circles': 'arm-circles-1', 'scapula-push-ups': 'scapular-push-up-1',
+};
+// where the drawing differs from your version: one short line under it
+const DRAW_NOTE = {
+  'box-squat-to-chair': 'Put a chair behind you and sit back to it.',
+  'single-leg-hip-thrust': 'The drawing shows the floor version. Do yours with your shoulders on the sofa.',
+  'side-plank-knees': 'Do yours with your knees on the floor.',
+  'side-plank-reach-through': 'The drawing shows the side plank you start from. Thread the top arm under and reach up.',
+  'side-plank-with-leg-lift': 'The drawing shows the basic side plank. Lift the top leg from there.',
+  'copenhagen-plank-foot-on-sofa': 'Use your sofa instead of the bench.',
+  'copenhagen-plank-knee-on-sofa': 'Use your sofa, with your knee on it instead of your foot.',
+  'forearm-plank-with-leg-lift': 'The drawing shows the basic forearm plank. Lift one foot at a time.',
+  'long-lever-plank': 'The drawing shows the basic forearm plank. Put your elbows a little further forward.',
+  'plank-body-saw': 'The drawing shows the basic forearm plank. Rock forward and back from there.',
+  'bent-knee-leg-raise': 'Do yours with bent knees.',
+  'push-up-on-dumbbells': 'The drawing shows a regular push-up. Put your hands on dumbbell handles to keep wrists straight.',
+  'push-up-on-dumbbells-3-s-lowering': 'The drawing shows a regular push-up. Put your hands on dumbbell handles to keep wrists straight.',
+  'single-arm-row': 'Use a chair or the sofa instead of the bench.',
+  'neutral-grip-shoulder-press': 'Turn your palms to face each other.',
+  'single-arm-shoulder-press': 'One arm at a time, palm facing in.',
+  'low-step-up': 'Step onto a stair instead of the bench.',
+  'standing-woodchop': 'The drawing uses a band. Hold one dumbbell with both hands instead.',
+  'pallof-press': 'Tie your long band to a table leg or door handle.',
+  'suitcase-carry': 'Carry one dumbbell in one hand.',
+  'suitcase-hold': 'Hold one dumbbell in one hand and stand still.',
+  'wall-shoulder-taps': 'From this position, tap one shoulder at a time.',
+  'plank-to-pike': 'From a plank, lift your hips into this shape, then back.',
+  'y-t-w-raise': 'Lift your arms into a Y, then a T, then a W.',
+  'pull-up-negative': 'Start at the top, then lower yourself slowly.',
+};
+const drawFor = id => DRAW[id] || null;
+const drawHTML = (d, alt, extra = '') => `<div class="media draw"><img src="ex/d/${d}.webp" alt="${escapeHTML(alt)}, drawing">${extra}</div>`;
 // a video chosen in plan.json wins over the photo; SHORT_VIDEO = vertical clips (YouTube Shorts), shown in a tall frame
 const PLAN_VIDEO = new Set(), SHORT_VIDEO = new Set();
 function photoFor(id) { if (PLAN_VIDEO.has(id)) return null; const p = PHOTO_ALIAS[id] || id; return PHOTOS.has(p) ? p : null; }
 function howHTML(it) {
-  const pid = photoFor(it.id);
-  const visual = pid
+  const did = drawFor(it.id), pid = did ? null : photoFor(it.id);
+  const visual = did ? drawHTML(did, it.name) : pid
     ? `<div class="photo"><img src="ex/${pid}-0.webp" alt="${it.name}: start position" loading="lazy"><img class="p1" src="ex/${pid}-1.webp" alt="${it.name}: end position" loading="lazy"></div><p class="credit">Start and end position · photos may show gym equipment; use your dumbbells or bodyweight</p>`
     : figSVG(it);
   const tips = TIPS[it.id] || [];
@@ -1107,7 +1171,32 @@ Object.assign(DE, {
   'Too easy': 'Zu leicht', 'Too hard': 'Zu schwer', 'Pain or discomfort': 'Schmerzen oder Beschwerden', 'Form felt off': 'Technik fühlte sich falsch an', 'Missing equipment': 'Ausrüstung fehlt', 'Loved it': 'Super',
   'E.g. left wrist felt sore, could go heavier next time': 'Z. B. linkes Handgelenk tat weh, nächstes Mal schwerer', 'Saved': 'Gespeichert',
   'Drawing of the movement. Tap the button for a real video tutorial.': 'Zeichnung der Bewegung. Tipp auf den Button für ein echtes Video.', 'No photo for this one yet': 'Für diese Übung gibt es noch kein Foto', 'Your plan was updated.': 'Dein Plan wurde aktualisiert.', 'Tap the button for a video tutorial.': 'Tipp auf den Button für ein Video.',
-  '▶ Play video': '▶ Video abspielen', '▶ Watch the video': '▶ Video ansehen', '▶ Find a video': '▶ Video suchen', 'Show the drawing': 'Zeichnung zeigen',
+  // notes under the exercise drawings (DRAW_NOTE)
+  'Put a chair behind you and sit back to it.': 'Stell einen Stuhl hinter dich und setz dich nach hinten darauf.',
+  'The drawing shows the floor version. Do yours with your shoulders on the sofa.': 'Die Zeichnung zeigt die Variante am Boden. Mach deine mit den Schultern auf dem Sofa.',
+  'Do yours with your knees on the floor.': 'Mach deine mit den Knien auf dem Boden.',
+  'The drawing shows the side plank you start from. Thread the top arm under and reach up.': 'Die Zeichnung zeigt den Seitstütz, aus dem du startest. Den oberen Arm unter dir durchfädeln und nach oben strecken.',
+  'The drawing shows the basic side plank. Lift the top leg from there.': 'Die Zeichnung zeigt den einfachen Seitstütz. Heb von dort das obere Bein.',
+  'Use your sofa instead of the bench.': 'Nimm dein Sofa statt der Bank.',
+  'Use your sofa, with your knee on it instead of your foot.': 'Nimm dein Sofa und leg das Knie statt des Fußes darauf.',
+  'The drawing shows the basic forearm plank. Lift one foot at a time.': 'Die Zeichnung zeigt den einfachen Unterarmstütz. Heb einen Fuß nach dem anderen.',
+  'The drawing shows the basic forearm plank. Put your elbows a little further forward.': 'Die Zeichnung zeigt den einfachen Unterarmstütz. Setz die Ellbogen etwas weiter nach vorn.',
+  'The drawing shows the basic forearm plank. Rock forward and back from there.': 'Die Zeichnung zeigt den einfachen Unterarmstütz. Schaukle von dort vor und zurück.',
+  'Do yours with bent knees.': 'Mach deine mit gebeugten Knien.',
+  'The drawing shows a regular push-up. Put your hands on dumbbell handles to keep wrists straight.': 'Die Zeichnung zeigt einen normalen Liegestütz. Stütz dich auf die Hantelgriffe, damit die Handgelenke gerade bleiben.',
+  'Use a chair or the sofa instead of the bench.': 'Nimm einen Stuhl oder das Sofa statt der Bank.',
+  'Turn your palms to face each other.': 'Dreh die Handflächen zueinander.',
+  'One arm at a time, palm facing in.': 'Ein Arm nach dem anderen, Handfläche zeigt nach innen.',
+  'Step onto a stair instead of the bench.': 'Steig auf eine Treppenstufe statt auf die Bank.',
+  'The drawing uses a band. Hold one dumbbell with both hands instead.': 'Die Zeichnung zeigt ein Band. Halt stattdessen eine Kurzhantel mit beiden Händen.',
+  'Tie your long band to a table leg or door handle.': 'Bind dein langes Band an ein Tischbein oder eine Türklinke.',
+  'Carry one dumbbell in one hand.': 'Trag eine Kurzhantel in einer Hand.',
+  'Hold one dumbbell in one hand and stand still.': 'Halt eine Kurzhantel in einer Hand und steh still.',
+  'From this position, tap one shoulder at a time.': 'Tipp aus dieser Position eine Schulter nach der anderen an.',
+  'From a plank, lift your hips into this shape, then back.': 'Aus dem Stütz die Hüfte in diese Form heben, dann zurück.',
+  'Lift your arms into a Y, then a T, then a W.': 'Heb die Arme zu einem Y, dann einem T, dann einem W.',
+  'Start at the top, then lower yourself slowly.': 'Oben starten, dann langsam herablassen.',
+  '▶ Play video': '▶ Video abspielen','▶ Watch the video': '▶ Video ansehen', '▶ Find a video': '▶ Video suchen', 'Show the drawing': 'Zeichnung zeigen',
   'No rest in a pair. Straight into it.': 'Keine Pause im Paar. Direkt weiter.', 'Get ready for': 'Mach dich bereit für', '+15 s': '+15 s', 'Skip rest': 'Weiter', 'Done': 'Fertig',
   "That's the workout": 'Das war das Training', 'Check all exercises': 'Alle Übungen prüfen', 'Finish and save': 'Beenden und speichern', 'All done': 'Alles erledigt',
   'Workout menu': 'Trainingsmenü', 'Pause and go to Today': 'Pausieren, zu „Heute“', 'keeps your sets': 'Sätze bleiben', 'See all exercises': 'Alle Übungen ansehen',
@@ -1159,7 +1248,7 @@ Object.assign(DE, {
   'GitHub was busy with another change. It will try again next time.': 'GitHub war mit einer anderen Änderung beschäftigt. Nächstes Mal klappt es.',
   'No connection to GitHub. It will try again next time you open the app.': 'Keine Verbindung zu GitHub. Beim nächsten Öffnen der App versucht sie es erneut.',
   'That doesn\'t look like a GitHub key. It starts with github_pat_.': 'Das sieht nicht nach einem GitHub-Schlüssel aus. Er beginnt mit github_pat_.',
-  'Exercise photos: free-exercise-db (public domain). Fonts: Bricolage Grotesque and Figtree (SIL Open Font License).': 'Übungsfotos: free-exercise-db (gemeinfrei). Schriften: Bricolage Grotesque und Figtree (SIL Open Font License).',
+  'Exercise drawings: Workout Guide by Bryl Lim, based on Everkinetic (CC BY-SA 4.0). Exercise photos: free-exercise-db (public domain). Fonts: Bricolage Grotesque and Figtree (SIL Open Font License).': 'Übungszeichnungen: Workout Guide von Bryl Lim, nach Everkinetic (CC BY-SA 4.0). Übungsfotos: free-exercise-db (gemeinfrei). Schriften: Bricolage Grotesque und Figtree (SIL Open Font License).',
   'Finish a workout first, then export.': 'Beende zuerst ein Training, dann exportieren.', 'That file isn\'t a Lunchtime Lifts backup.': 'Diese Datei ist kein Lunchtime-Lifts-Backup.',
   'Rest day logged.': 'Ruhetag eingetragen.', 'Tennis day logged.': 'Tennistag eingetragen.',
   // welcome
@@ -1900,8 +1989,9 @@ function tickWarm() {
   if (fill) fill.style.width = (100 * (1 - left / WARM_SECS)).toFixed(1) + '%';
 }
 function wgMediaHTML(w) {
-  let pid = w.photo && PHOTOS.has(w.photo) ? w.photo : null;
-  if (w.first) { const f = warmFirstLift(); pid = f ? photoFor(f.id) : null; }
+  let did = drawFor(slug(w.name)), pid = w.photo && PHOTOS.has(w.photo) ? w.photo : null;
+  if (w.first) { const f = warmFirstLift(); did = f ? drawFor(f.id) : null; pid = f ? photoFor(f.id) : null; }
+  if (did) return drawHTML(did, w.name);
   if (pid) return `<div class="media"><img src="ex/${pid}-0.webp" alt="Start position"><img class="p1" src="ex/${pid}-1.webp" alt="End position"></div>`;
   if (!w.video) return '';
   return canEmbed()
@@ -2299,14 +2389,19 @@ function renderFocus() {
     dock = `<button class="btn btn-primary big" data-act="finish">Finish and save</button>`;
   } else {
     const it = itemOf(st.id), i = st.i;
-    const pid = photoFor(it.id);
+    const did = drawFor(it.id), pid = did ? null : photoFor(it.id);
     if (playingVideo && playingVideo !== it.id) playingVideo = null; // also closes the warm-up video once exercises start
-    openDemo = pid || playingVideo ? null : it.id;
+    openDemo = did || pid || playingVideo ? null : it.id;
     const vq = encodeURIComponent(it.name + ' exercise proper form');
-    const visual = pid
+    const vidBtn = VIDEO[it.id]
+      ? (canEmbed() ? `<button class="vidbtn" data-act="play-video" data-id="${it.id}">▶ Play video</button>` : `<a class="vidbtn" href="https://www.youtube.com/watch?v=${VIDEO[it.id]}" target="_blank" rel="noopener">▶ Watch the video</a>`)
+      : `<a class="vidbtn" href="https://www.youtube.com/results?search_query=${vq}" target="_blank" rel="noopener">▶ Find a video</a>`;
+    const visual = did && playingVideo !== it.id
+      ? `${drawHTML(did, it.name, vidBtn)}${DRAW_NOTE[it.id] ? `<p class="small muted" style="margin-top:-8px">${DRAW_NOTE[it.id]}</p>` : ''}`
+      : pid
       ? `<div class="media"><img src="ex/${pid}-0.webp" alt="${it.name}, start position"><img class="p1" src="ex/${pid}-1.webp" alt="${it.name}, end position"></div>${PHOTO_NOTE[it.id] ? `<p class="small muted" style="margin-top:-8px">${PHOTO_NOTE[it.id]}</p>` : ''}`
       : VIDEO[it.id] && (playingVideo === it.id || (PLAN_VIDEO.has(it.id) && canEmbed()))
-        ? `<div class="media video${SHORT_VIDEO.has(it.id) ? ' short' : ''}"><iframe src="https://www.youtube-nocookie.com/embed/${VIDEO[it.id]}?rel=0&playsinline=1&autoplay=1&mute=1${PLAN_VIDEO.has(it.id) ? `&loop=1&playlist=${VIDEO[it.id]}` : ''}" title="${it.name} tutorial video" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe></div><div class="row between" style="margin-top:-6px">${PLAN_VIDEO.has(it.id) ? '<span></span>' : `<button class="btn btn-ghost" style="padding:0" data-act="stop-video">Show the drawing</button>`}<a class="btn btn-ghost" style="padding:0" href="https://www.youtube.com/watch?v=${VIDEO[it.id]}" target="_blank" rel="noopener">Open in YouTube</a></div>`
+        ? `<div class="media video${SHORT_VIDEO.has(it.id) ? ' short' : ''}"><iframe src="https://www.youtube-nocookie.com/embed/${VIDEO[it.id]}?rel=0&playsinline=1&autoplay=1&mute=1${PLAN_VIDEO.has(it.id) ? `&loop=1&playlist=${VIDEO[it.id]}` : ''}" title="${it.name} tutorial video" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe></div><div class="row between" style="margin-top:-6px">${PLAN_VIDEO.has(it.id) && !did ? '<span></span>' : `<button class="btn btn-ghost" style="padding:0" data-act="stop-video">Show the drawing</button>`}<a class="btn btn-ghost" style="padding:0" href="https://www.youtube.com/watch?v=${VIDEO[it.id]}" target="_blank" rel="noopener">Open in YouTube</a></div>`
         : `<div class="media">${figSVG(it) || '<p class="muted" style="position:absolute;inset:0;display:grid;place-items:center;margin:0">No photo for this one yet</p>'}${VIDEO[it.id]
             ? (canEmbed() ? `<button class="vidbtn" data-act="play-video" data-id="${it.id}">▶ Play video</button>` : `<a class="vidbtn" href="https://www.youtube.com/watch?v=${VIDEO[it.id]}" target="_blank" rel="noopener">▶ Watch the video</a>`)
             : `<a class="vidbtn" href="https://www.youtube.com/results?search_query=${vq}" target="_blank" rel="noopener">▶ Find a video</a>`}</div><p class="small muted" style="margin-top:-8px">${figFor(it.id) ? 'Drawing of the movement. Tap the button for a real video tutorial.' : 'Tap the button for a video tutorial.'}</p>`;
@@ -2469,7 +2564,7 @@ function renderSettings() {
   </section>
   ${dataCardHTML()}
   ${syncCardHTML()}
-  <p class="small muted" style="text-align:center">Exercise photos: free-exercise-db (public domain). Fonts: Bricolage Grotesque and Figtree (SIL Open Font License).</p>`;
+  <p class="small muted" style="text-align:center">Exercise drawings: Workout Guide by Bryl Lim, based on Everkinetic (CC BY-SA 4.0). Exercise photos: free-exercise-db (public domain). Fonts: Bricolage Grotesque and Figtree (SIL Open Font License).</p>`;
 }
 function dataCardHTML() {
   return `<section class="card">
