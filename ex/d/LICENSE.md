@@ -4,4 +4,4 @@ The images in this folder come from **Workout Guide** by Bryl Lim (https://githu
 
 License: Creative Commons Attribution-ShareAlike 4.0 (CC BY-SA 4.0), https://creativecommons.org/licenses/by-sa/4.0/
 
-Changes made for Lunchtime Lifts: one frame chosen per exercise, cropped to the figure, resized and saved as WebP. These adapted images are shared under the same license. File names keep the original exercise name and frame number (e.g. `goblet-squat-1.webp` is `goblet-squat/frame-1.png`).
+Changes made for Lunchtime Lifts: one frame chosen per exercise, cropped to the figure, resized and saved as WebP. For the moving drawings in `m/`, two to three frames of one exercise are shifted to line up with each other, cropped with the same box, resized and saved as WebP; the app shows them one after another. These adapted images are shared under the same license. File names keep the original exercise name and frame number (e.g. `goblet-squat-1.webp` is `goblet-squat/frame-1.png`).

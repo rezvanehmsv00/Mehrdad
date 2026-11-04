@@ -157,6 +157,8 @@ h3 { font-size: 18px; line-height: 1.2; letter-spacing: -0.01em; }
 .focus { display: flex; flex-direction: column; gap: 16px; }
 .ctx { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .ctx .where { font-weight: 600; color: var(--muted); font-size: 15px; }
+.ctxr { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.skipbtn { font: inherit; font-size: 13.5px; font-weight: 600; color: var(--muted); background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; min-height: 34px; cursor: pointer; }
 .setdots { display: flex; gap: 6px; align-items: center; }
 .setdots i { width: 12px; height: 12px; border-radius: 50%; background: var(--sunken); display: block; }
 .setdots i.d { background: var(--good); }
@@ -185,6 +187,10 @@ h3 { font-size: 18px; line-height: 1.2; letter-spacing: -0.01em; }
 .media .fig { position: absolute; inset: 0; width: 100%; height: 100%; }
 .media.draw img { top: 46px; right: 6%; bottom: 10px; left: 6%; width: 88%; height: calc(100% - 56px); background: none; filter: invert(1); opacity: .82; }
 :root[data-theme="dark"] .media.draw img { filter: none; opacity: .9; }
+.media.draw.move img.f { visibility: hidden; }
+@keyframes dfr2 { 0% { visibility: visible; } 50%, 100% { visibility: hidden; } }
+@keyframes dfr3 { 0% { visibility: visible; } 33.333%, 100% { visibility: hidden; } }
+@keyframes dfr4 { 0% { visibility: visible; } 25%, 100% { visibility: hidden; } }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .media.draw img { filter: none; opacity: .9; } }
 @keyframes flip { 0%, 38% { opacity: 0; } 50%, 88% { opacity: 1; } 100% { opacity: 0; } }
 .cue { font-size: 16px; }
@@ -387,6 +393,8 @@ input[type="text"] { width: 100%; min-height: 50px; border-radius: 14px; border:
   .orb, .switch, .switch::after, .fold > summary::after { transition: none; }
   .bar span, .ring .fg { transition: none; }
   .media .p1 { animation: none; opacity: 0; }
+  .media.draw.move img.f { animation: none !important; }
+  .media.draw.move img.f:first-of-type { visibility: visible; }
 }
 </style>
 
@@ -1006,7 +1014,7 @@ const DRAW = {
   'side-plank': 'side-plank-1', 'side-plank-knees': 'side-plank-1', 'side-plank-reach-through': 'side-plank-1', 'side-plank-with-leg-lift': 'side-plank-1', 'side-plank-hip-dips': 'side-plank-hip-dip-1',
   'copenhagen-plank-foot-on-sofa': 'copenhagen-plank-1', 'copenhagen-plank-knee-on-sofa': 'copenhagen-plank-1',
   'forearm-plank': 'plank-1', 'forearm-plank-with-leg-lift': 'plank-1', 'long-lever-plank': 'plank-1', 'plank-body-saw': 'plank-1',
-  'reverse-crunch': 'reverse-crunch-2', 'lying-leg-raise': 'lying-leg-raise-2', 'bent-knee-leg-raise': 'lying-leg-raise-2',
+  'dumbbell-crunch': 'weighted-crunch-1', 'reverse-crunch': 'reverse-crunch-2', 'lying-leg-raise': 'lying-leg-raise-2', 'bent-knee-leg-raise': 'lying-leg-raise-2',
   'hollow-hold': 'hollow-body-hold-1', 'tuck-hollow-hold': 'hollow-body-hold-3', 'hollow-body-rocks': 'hollow-rock-2', 'v-up': 'v-up-2',
   'push-up': 'push-up-1', 'pause-push-up': 'push-up-1', 'tempo-push-up': 'push-up-1', 'push-up-on-dumbbells': 'push-up-1', 'push-up-on-dumbbells-3-s-lowering': 'push-up-1',
   'incline-push-up': 'incline-push-up-3', 'pike-push-up': 'pike-push-up-2', 'pike-push-up-3-s-lowering': 'pike-push-up-2', 'elevated-pike-push-up': 'feet-elevated-pike-push-up-1',
@@ -1049,9 +1057,19 @@ const DRAW_NOTE = {
   'plank-to-pike': 'From a plank, lift your hips into this shape, then back.',
   'y-t-w-raise': 'Lift your arms into a Y, then a T, then a W.',
   'pull-up-negative': 'Start at the top, then lower yourself slowly.',
+  'dumbbell-crunch': 'The drawing uses a weight plate. Hold one dumbbell on your chest instead.',
 };
-const drawFor = id => DRAW[id] || null;
-const drawHTML = (d, alt, extra = '') => `<div class="media draw"><img src="ex/d/${d}.webp" alt="${escapeHTML(alt)}, drawing">${extra}</div>`;
+/* Moving drawings: all frames of one exercise, cropped with the same box (ex/d/m/<base>-<frame>.webp), shown one after another like a GIF.
+   Frame order = play order. Holds and drawings that only show a variation stay still (DRAW_STILL). */
+const DRAW_MOVE = {'arm-circles': [2, 3], 'band-pull-apart': [3, 1], 'banded-face-pull': [2, 1], 'banded-lateral-walk': [3, 1], 'bear-crawl': [1, 2, 3], 'bulgarian-split-squat': [3, 1], 'calf-raise': [1, 2], 'cossack-squat': [1, 2, 3, 2], 'dumbbell-bent-over-row': [1, 2], 'dumbbell-hip-thrust': [1, 3], 'feet-elevated-pike-push-up': [3, 1], 'glute-bridge': [1, 2], 'goblet-squat': [3, 1], 'hollow-rock': [1, 2, 3, 2], 'inchworm': [3, 2], 'incline-push-up': [1, 3], 'jump-squat': [2, 3, 1], 'jumping-jack': [3, 1], 'lateral-lunge': [1, 2, 3, 2], 'lying-leg-raise': [3, 1], 'mountain-climber': [1, 3], 'negative-pull-up': [3, 2, 1], 'one-arm-dumbbell-row': [1, 2], 'pike-push-up': [2, 1], 'prone-y-raise': [1, 2], 'pull-up': [3, 1], 'rear-delt-fly': [2, 1], 'reverse-crunch': [3, 2], 'scapular-push-up': [1, 3], 'side-plank-hip-dip': [1, 3], 'single-leg-calf-raise': [1, 2], 'single-leg-glute-bridge': [2, 1], 'skater-hop': [1, 3], 'split-squat': [2, 1], 'standing-dumbbell-press': [3, 1], 'step-up': [1, 3], 'superman-hold': [3, 1], 'v-up': [3, 2], 'wall-walk': [1, 2, 3]};
+const DRAW_STILL = new Set(['chest-to-wall-handstand', 'plank-walk-out', 'superman-hold', 'wall-shoulder-taps', 'wall-walk-up-hold']);
+const FRAME_S = 0.85; // seconds per frame
+const drawFor = id => { const d = DRAW[id]; if (!d) return null; const base = d.replace(/-\d+$/, ''); return DRAW_MOVE[base] && !DRAW_STILL.has(id) ? 'm:' + base : d; };
+const drawHTML = (d, alt, extra = '') => {
+  if (!d.startsWith('m:')) return `<div class="media draw"><img src="ex/d/${d}.webp" alt="${escapeHTML(alt)}, drawing">${extra}</div>`;
+  const base = d.slice(2), seq = DRAW_MOVE[base], n = seq.length;
+  return `<div class="media draw move">${seq.map((f, k) => `<img class="f" src="ex/d/m/${base}-${f}.webp" alt="${k ? '' : escapeHTML(alt) + ', moving drawing'}" style="animation:dfr${n} ${(n * FRAME_S).toFixed(2)}s step-end infinite;animation-delay:-${(((n - k) % n) * FRAME_S).toFixed(2)}s">`).join('')}${extra}</div>`;
+};
 // a video chosen in plan.json wins over the photo; SHORT_VIDEO = vertical clips (YouTube Shorts), shown in a tall frame
 const PLAN_VIDEO = new Set(), SHORT_VIDEO = new Set();
 function photoFor(id) { if (PLAN_VIDEO.has(id)) return null; const p = PHOTO_ALIAS[id] || id; return PHOTOS.has(p) ? p : null; }
@@ -1226,7 +1244,9 @@ Object.assign(DE, {
   'E.g. 26, want to get fitter and stronger, sore left knee': 'Z. B. 30, fitter und stärker werden, empfindliches linkes Knie',
   'Language and look': 'Sprache und Aussehen', 'Language': 'Sprache', 'Appearance': 'Aussehen', 'Automatic': 'Automatisch', 'Light': 'Hell', 'Dark': 'Dunkel',
   'During workouts': 'Während des Trainings', 'Sound': 'Ton', 'A short beep when rest or a hold ends': 'Kurzer Piepton, wenn Pause oder Halten endet', 'Vibration': 'Vibration', 'Works on Android': 'Funktioniert auf Android',
-  'Kegels': 'Beckenboden', 'Show the kegel card on Today': 'Beckenboden-Karte unter „Heute“ zeigen',
+  'Kegels': 'Beckenboden', 'Start a guided set': 'Geführte Runde starten', 'Squeeze': 'Anspannen', 'Get ready': 'Mach dich bereit', 'Breathe normally': 'Normal atmen', 'Quick squeezes': 'Schnelle Kontraktionen', 'Slow holds': 'Langsames Halten', 'Relax': 'Entspannen',
+  'Lift and squeeze the pelvic floor. Keep breathing, and keep glutes, thighs and abs soft. Relax fully between reps.': 'Beckenboden anheben und anspannen. Weiter atmen, Po, Oberschenkel und Bauch locker lassen. Zwischen den Wiederholungen ganz entspannen.',
+  'Tap an earlier day to mark it as yoga or rest.': 'Tipp auf einen früheren Tag, um Yoga oder Pause einzutragen.', 'Skip exercise': 'Übung überspringen', 'Show the kegel card on Today': 'Beckenboden-Karte unter „Heute“ zeigen',
   'I have a pull-up bar': 'Ich habe eine Klimmzugstange', 'Adds dead hangs and pull-up work to upper-body days': 'Fügt Hängen und Klimmzüge zu Oberkörper-Tagen hinzu',
   'Your dumbbells (kg)': 'Deine Kurzhanteln (kg)', 'The + and − buttons step through these.': 'Die Tasten + und − springen durch diese Gewichte.',
   'Plan: Strength with tennis skills': 'Plan: Kraft mit Tennis-Skills', 'Switch plan': 'Plan wechseln',
@@ -1422,6 +1442,9 @@ DE_RX.push(
   [/^Last synced (.+)$/, 'Zuletzt synchronisiert: $1'],
   [/^Last backup: (.+)\. This browser can't save files by itself, so you'll get a reminder once a week\.$/, 'Letztes Backup: $1. Dieser Browser kann keine Dateien von selbst speichern, deshalb erinnert dich die App einmal pro Woche.'],
   [/^Skip (.+)$/, (m, n) => tr(n) + ' überspringen'],
+  [/^(\d+) s holds × 10, then (\d+) quick ones\. 2–3 times a day\.$/, (m, a, b) => `${a} s halten × 10, dann ${b} schnelle. 2–3-mal am Tag.`],
+  [/^(.+) · rep (\d+) of (\d+)$/, (m, p, a, b) => `${tr(p)} · Wdh. ${a} von ${b}`],
+  [/^(\d+) of 3 today$/, (m, a) => `${a} von 3 heute`],
   [/^Skipped (.+)\.$/, (m, n) => tr(n) + ' übersprungen.'],
   [/^Next: (.+), set (\d+)$/, (m, n, k) => `Als Nächstes: ${tr(n)}, Satz ${k}`],
   [/^Next: (.+)$/, (m, n) => 'Als Nächstes: ' + tr(n)],
@@ -1654,7 +1677,7 @@ function exportRows() {
   for (const s of done) {
     const d = new Date(s.startedAt), date = dayKey(d), time = pad(d.getHours()) + ':' + pad(d.getMinutes());
     for (const it of s.items || []) (s.log[it.id] || []).forEach((x, i) => {
-      sets.push([date, time, DAY_LABEL[s.day], s.cycle, s.week, it.name, i + 1, it.weighted && x.w !== '' ? +x.w : '', it.weighted && x.w !== '' ? nOf(x, it.id) : '', x.r === '' ? '' : +x.r, it.time ? 'seconds' : 'reps', it.perSide ? 'yes' : '', fmtTarget(it), x.done ? 'yes' : 'no']);
+      sets.push([date, time, DAY_LABEL[s.day], s.cycle, s.week, it.name, i + 1, it.weighted && x.w !== '' ? +x.w : '', it.weighted && x.w !== '' ? nOf(x, it.id) : '', x.r === '' ? '' : +x.r, it.time ? 'seconds' : 'reps', it.perSide ? 'yes' : '', fmtTarget(it), x.done ? 'yes' : x.skipped ? 'skipped' : 'no']);
     });
     const [dn, t] = setsDone(s);
     workouts.push([date, DAY_LABEL[s.day], s.cycle, s.week, s.endedAt ? Math.round((s.endedAt - s.startedAt) / 60000) : '', dn, t, volumeOf(s)]);
@@ -2418,9 +2441,9 @@ function renderFocus() {
     }
     const ln = lastNoteFor(it.id, A.id);
     const running = hold && hold.id === it.id && hold.i === i;
-    body = `${flash ? `<div class="flash" role="status">${flash}${flashUndo ? ` <button class="btn btn-ghost" style="padding:0;min-height:0" data-act="prev">Undo</button>` : ''}</div>` : ''}
+    body = `${flash ? `<div class="flash" role="status">${flash}${flashUndo ? ` <button class="btn btn-ghost" style="padding:0;min-height:0" data-act="${typeof flashUndo === 'string' ? 'unskip' : 'prev'}" data-id="${typeof flashUndo === 'string' ? flashUndo : ''}">Undo</button>` : ''}</div>` : ''}
     <section class="focus" id="card-${it.id}">
-      <div class="ctx"><span class="where">${stepContext(it, i)}</span>${setDotsHTML(it, i)}</div>
+      <div class="ctx"><span class="where">${stepContext(it, i)}</span><span class="ctxr">${setDotsHTML(it, i)}<button class="skipbtn" data-act="skip-ex" data-id="${it.id}">Skip exercise</button></span></div>
       <h1>${it.name}</h1>
       <div class="chips"><span class="chip target">Set ${i + 1}: ${tgt}</span>${it.tempo ? `<span class="chip tempo">Tempo: ${it.tempo}</span>` : ''}${it.note ? `<span class="chip warn">${it.note}</span>` : ''}</div>
       ${visual}
@@ -2998,7 +3021,8 @@ document.addEventListener('click', e => {
       else if (A.warmup) { A.warmup = false; rest = null; saveSession(A); renderWorkout(); }
       break;
     }
-    case 'skip-ex': closeSheet(); { const it = itemOf(id); A.log[id].forEach(x => { if (!x.done) x.skipped = true; }); hold = null; rest = null; saveSession(A); flash = 'Skipped ' + it.name + '.'; renderWorkout(); window.scrollTo(0, 0); break; }
+    case 'skip-ex': closeSheet(); { const it = itemOf(id); A.log[id].forEach(x => { if (!x.done) x.skipped = true; }); hold = null; rest = null; saveSession(A); flash = 'Skipped ' + it.name + '.'; flashUndo = id; renderWorkout(); window.scrollTo(0, 0); break; }
+    case 'unskip': { A.log[id].forEach(x => { x.skipped = false; }); flash = ''; flashUndo = false; saveSession(A); renderWorkout(); window.scrollTo(0, 0); break; }
     case 'finish-old': if (S.resumable) finishOld(S.resumable); break;
     case 'review': reviewOf = { cycle: +v, round: +(b.dataset.r || 1) }; claudeTip = null; screen = 'review'; render(); window.scrollTo(0, 0); break;
     case 'review-done': delete S.state.pendingReview; saveState(); screen = 'home'; tab = 'today'; render(); window.scrollTo(0, 0); break;
